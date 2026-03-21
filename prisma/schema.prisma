@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  UNDISCLOSED
+}
+
+enum SkillLevel {
+  L1
+  L2
+  L3
+  L4
+  L5
+}
+
+enum GameStatus {
+  OPEN
+  FULL
+  CANCELLED
+  COMPLETED
+}
+
+enum ApprovalMode {
+  AUTO
+  MANUAL
+}
+
+enum JoinRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  WITHDRAWN
+  CANCELLED
+}
+
+enum ShuttleType {
+  FEATHER
+  NYLON
+  MIXED
+}
+
+model User {
+  id                String        @id @default(uuid()) @db.Uuid
+  email             String?       @unique @db.VarChar(255)
+  phoneNumber       String?       @unique @db.VarChar(32)
+  passwordHash      String?       @db.VarChar(255)
+  nickname          String        @db.VarChar(50)
+  avatarUrl         String?       @db.VarChar(500)
+  gender            Gender?
+  skillLevel        SkillLevel
+  preferredCity     String?       @db.VarChar(50)
+  preferredDistrict String?       @db.VarChar(50)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  hostedGames       Game[]        @relation("HostedGames")
+  joinRequests      JoinRequest[]
+
+  @@index([skillLevel], map: "idx_users_skill_level")
+  @@index([preferredCity, preferredDistrict], map: "idx_users_preferred_area")
+}
+
+model Game {
+  id                String        @id @default(uuid()) @db.Uuid
+  hostId            String        @db.Uuid
+  title             String        @db.VarChar(120)
+  city              String        @db.VarChar(50)
+  district          String        @db.VarChar(50)
+  venueName         String        @db.VarChar(120)
+  venueAddress      String        @db.VarChar(255)
+  gameDate          DateTime      @db.Date
+  startAt           DateTime
+  endAt             DateTime
+  skillLevelMin     SkillLevel
+  skillLevelMax     SkillLevel?
+  fee               Int
+  capacity          Int
+  availableSpots    Int
+  courtCount        Int
+  shuttleType       ShuttleType?
+  notes             String?       @db.Text
+  approvalMode      ApprovalMode  @default(AUTO)
+  status            GameStatus    @default(OPEN)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  host              User          @relation("HostedGames", fields: [hostId], references: [id])
+  joinRequests      JoinRequest[]
+
+  @@index([city, district, gameDate, status], map: "idx_games_city_district_date_status")
+  @@index([district, gameDate], map: "idx_games_district_date")
+  @@index([gameDate], map: "idx_games_game_date")
+  @@index([status, gameDate], map: "idx_games_status_date")
+  @@index([hostId, gameDate], map: "idx_games_host_date")
+}
+
+model JoinRequest {
+  id             String            @id @default(uuid()) @db.Uuid
+  gameId         String            @db.Uuid
+  userId         String            @db.Uuid
+  status         JoinRequestStatus @default(PENDING)
+  message        String?           @db.VarChar(300)
+  respondedAt    DateTime?
+  approvedAt     DateTime?
+  rejectedReason String?           @db.VarChar(300)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  game           Game              @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, userId], map: "uniq_join_requests_game_user")
+  @@index([gameId, status], map: "idx_join_requests_game_status")
+  @@index([userId, status], map: "idx_join_requests_user_status")
+}
