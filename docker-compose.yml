@@ -1,0 +1,61 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: bat-dating-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-bat_dating_app}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      TZ: Asia/Taipei
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - bat_dating_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-bat_dating_app}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: deploy/api.Dockerfile
+    container_name: bat-dating-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      HOST: ${HOST:-0.0.0.0}
+      PORT: ${API_PORT:-3000}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/bat_dating_app}
+      JWT_SECRET: ${JWT_SECRET:-replace-with-a-long-random-secret-at-least-32-chars}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:8080,http://127.0.0.1:8080}
+    ports:
+      - "127.0.0.1:${API_PORT:-3000}:3000"
+    expose:
+      - "3000"
+
+  web:
+    build:
+      context: .
+      dockerfile: deploy/web.Dockerfile
+      args:
+        API_BASE_URL: ${API_BASE_URL:-}
+        DEV_USER_EMAIL: ${DEV_USER_EMAIL:-kevin.seed@example.com}
+    container_name: bat-dating-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "${WEB_PORT:-8080}:80"
+
+volumes:
+  bat_dating_postgres_data:

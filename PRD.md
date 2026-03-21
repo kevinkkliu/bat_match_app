@@ -6,6 +6,10 @@ Taiwan Badminton Match (台灣羽球零打媒合平台)
 Goal
 Create a centralized mobile app where hosts can publish badminton sessions and players can quickly discover, evaluate, and join suitable games without relying on fragmented Facebook groups or LINE chats.
 
+Core Product Principle
+Core functionality must remain permanently free for all users.
+This includes browsing games, filtering/searching, viewing details, creating games, joining/requesting to join, and managing joined/created games.
+
 1. Target Audience & Core Value Proposition
 
 Target Audience

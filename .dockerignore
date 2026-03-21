@@ -1,0 +1,14 @@
+.git
+.env
+**/.dart_tool
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.idea
+**/.metadata
+**/.packages
+**/build
+**/coverage
+**/dist
+**/node_modules
+**/*.log
+flutter_*.log
