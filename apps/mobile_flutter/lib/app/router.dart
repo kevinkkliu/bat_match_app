@@ -7,6 +7,7 @@ import '../features/game_discovery/presentation/game_discovery_page.dart';
 import '../features/game_requests/presentation/game_requests_page.dart';
 import '../features/my_games/presentation/my_games_page.dart';
 import '../features/profile/presentation/profile_page.dart';
+import '../features/profile/presentation/oauth_callback_page.dart';
 import '../shared/widgets/app_shell.dart';
 import 'app_routes.dart';
 
@@ -20,6 +21,14 @@ final GoRouter appRouter = GoRouter(
       path: '/',
       redirect: (BuildContext context, GoRouterState state) =>
           AppRoutePaths.home,
+    ),
+    GoRoute(
+      path: '/auth/callback',
+      builder: (BuildContext context, GoRouterState state) {
+        return OAuthCallbackPage(
+          token: state.uri.queryParameters['token'],
+        );
+      },
     ),
     StatefulShellRoute.indexedStack(
       builder: (BuildContext context, GoRouterState state,

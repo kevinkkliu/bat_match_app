@@ -73,6 +73,8 @@ export class GamesService {
             skillLevel: true,
             preferredCity: true,
             preferredDistrict: true,
+            phoneNumber: true,
+            lineId: true,
           },
         },
         joinRequests: {
@@ -108,6 +110,14 @@ export class GamesService {
       detail.joinSummary.currentUserRequestId = currentUserJoinRequest?.id ?? null;
       detail.joinSummary.currentUserRequestedAt =
         currentUserJoinRequest?.createdAt?.toISOString() ?? null;
+    }
+
+    const isHost = currentUserId === game.hostId;
+    const isApproved = detail.joinSummary.currentUserStatus === 'APPROVED';
+
+    if (!isHost && !isApproved) {
+      delete detail.host.phoneNumber;
+      delete detail.host.lineId;
     }
 
     return detail;
@@ -146,6 +156,8 @@ export class GamesService {
             skillLevel: true,
             preferredCity: true,
             preferredDistrict: true,
+            phoneNumber: true,
+            lineId: true,
           },
         },
         joinRequests: {

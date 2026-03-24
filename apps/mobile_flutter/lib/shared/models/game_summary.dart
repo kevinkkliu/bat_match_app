@@ -7,6 +7,8 @@ class GameHostSummary {
     required this.skillLevel,
     required this.preferredCity,
     required this.preferredDistrict,
+    this.phoneNumber,
+    this.lineId,
   });
 
   factory GameHostSummary.fromJson(Map<String, dynamic> json) {
@@ -18,6 +20,8 @@ class GameHostSummary {
       skillLevel: json['skillLevel'] as String,
       preferredCity: json['preferredCity'] as String?,
       preferredDistrict: json['preferredDistrict'] as String?,
+      phoneNumber: json['phoneNumber'] as String?,
+      lineId: json['lineId'] as String?,
     );
   }
 
@@ -28,6 +32,8 @@ class GameHostSummary {
   final String skillLevel;
   final String? preferredCity;
   final String? preferredDistrict;
+  final String? phoneNumber;
+  final String? lineId;
 }
 
 class GameSummary {

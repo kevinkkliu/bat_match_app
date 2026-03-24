@@ -13,6 +13,8 @@ type GameHost = {
   skillLevel: UserSummaryDto['skillLevel'];
   preferredCity: string | null;
   preferredDistrict: string | null;
+  phoneNumber?: string | null;
+  lineId?: string | null;
 };
 
 type GameRow = {
@@ -65,6 +67,8 @@ export function mapUserSummary(user: GameHost): UserSummaryDto {
     skillLevel: user.skillLevel,
     preferredCity: user.preferredCity,
     preferredDistrict: user.preferredDistrict,
+    ...(user.phoneNumber ? { phoneNumber: user.phoneNumber } : {}),
+    ...(user.lineId ? { lineId: user.lineId } : {}),
   };
 }
 

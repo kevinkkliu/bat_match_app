@@ -202,6 +202,35 @@ class _GameDetailPageState extends ConsumerState<GameDetailPage> {
                           ),
                         ],
                       ),
+                      if (detail.host.phoneNumber != null ||
+                          detail.host.lineId != null) ...<Widget>[
+                        const SizedBox(height: 16),
+                        const Divider(color: Color(0xFFEAF1E7)),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Contact Info (Visible since you are approved)',
+                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                color: const Color(0xFF1E6B42),
+                                fontWeight: FontWeight.w800,
+                              ),
+                        ),
+                        const SizedBox(height: 12),
+                        if (detail.host.phoneNumber != null)
+                          _DetailRow(
+                            icon: Icons.phone_rounded,
+                            label: 'Phone number',
+                            value: detail.host.phoneNumber!,
+                          ),
+                        if (detail.host.phoneNumber != null &&
+                            detail.host.lineId != null)
+                          const SizedBox(height: 10),
+                        if (detail.host.lineId != null)
+                          _DetailRow(
+                            icon: Icons.chat_bubble_rounded,
+                            label: 'LINE ID',
+                            value: detail.host.lineId!,
+                          ),
+                      ],
                     ],
                   ),
                 ),

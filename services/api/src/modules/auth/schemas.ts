@@ -25,6 +25,7 @@ export const patchMeBodySchema = z.object({
   skillLevel: z.enum(['L1', 'L2', 'L3', 'L4', 'L5']).optional(),
   preferredCity: z.string().trim().min(1).max(50).optional(),
   preferredDistrict: z.string().trim().min(1).max(50).optional(),
+  lineId: z.string().trim().max(50).nullable().optional(),
 });
 
 export type RegisterBody = z.infer<typeof registerBodySchema>;

@@ -8,6 +8,8 @@ export type UserSummaryRecord = {
   skillLevel: UserSummaryDto['skillLevel'];
   preferredCity: string | null;
   preferredDistrict: string | null;
+  phoneNumber?: string | null;
+  lineId?: string | null;
 };
 
 export function toUserSummary(user: UserSummaryRecord): UserSummaryDto {
@@ -19,5 +21,7 @@ export function toUserSummary(user: UserSummaryRecord): UserSummaryDto {
     skillLevel: user.skillLevel,
     preferredCity: user.preferredCity,
     preferredDistrict: user.preferredDistrict,
+    ...(user.phoneNumber ? { phoneNumber: user.phoneNumber } : {}),
+    ...(user.lineId ? { lineId: user.lineId } : {}),
   };
 }

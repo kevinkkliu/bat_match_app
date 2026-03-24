@@ -10,6 +10,8 @@ class ProfileUser {
     required this.skillLevel,
     required this.preferredCity,
     required this.preferredDistrict,
+    this.phoneNumber,
+    this.lineId,
   });
 
   factory ProfileUser.fromJson(Map<String, dynamic> json) {
@@ -21,6 +23,8 @@ class ProfileUser {
       skillLevel: json['skillLevel'] as String,
       preferredCity: json['preferredCity'] as String?,
       preferredDistrict: json['preferredDistrict'] as String?,
+      phoneNumber: json['phoneNumber'] as String?,
+      lineId: json['lineId'] as String?,
     );
   }
 
@@ -31,6 +35,8 @@ class ProfileUser {
   final String skillLevel;
   final String? preferredCity;
   final String? preferredDistrict;
+  final String? phoneNumber;
+  final String? lineId;
 }
 
 class ProfileSession {
@@ -96,6 +102,7 @@ class ProfileUpdateInput {
     required this.skillLevel,
     required this.preferredCity,
     required this.preferredDistrict,
+    this.lineId,
   });
 
   final String nickname;
@@ -104,6 +111,7 @@ class ProfileUpdateInput {
   final String skillLevel;
   final String preferredCity;
   final String preferredDistrict;
+  final String? lineId;
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
@@ -113,6 +121,7 @@ class ProfileUpdateInput {
       if (skillLevel.trim().isNotEmpty) 'skillLevel': skillLevel.trim(),
       if (preferredCity.trim().isNotEmpty) 'preferredCity': preferredCity.trim(),
       if (preferredDistrict.trim().isNotEmpty) 'preferredDistrict': preferredDistrict.trim(),
+      if (lineId != null && lineId!.trim().isNotEmpty) 'lineId': lineId!.trim(),
     };
   }
 }
@@ -203,6 +212,10 @@ class ProfileRepository {
 
   Future<void> clearSession() async {
     await _storage.delete(key: tokenStorageKey);
+  }
+
+  Future<void> saveToken(String token) async {
+    await _storage.write(key: tokenStorageKey, value: token);
   }
 
   Future<String?> readToken() {

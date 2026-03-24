@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../shared/widgets/section_card.dart';
 import '../application/profile_providers.dart';
@@ -33,6 +34,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   final TextEditingController _avatarController = TextEditingController();
   final TextEditingController _cityController = TextEditingController();
   final TextEditingController _districtController = TextEditingController();
+  final TextEditingController _lineIdController = TextEditingController();
 
   _AuthMode _authMode = _AuthMode.signIn;
   String _skillLevel = 'L3';
@@ -50,6 +52,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     _avatarController.dispose();
     _cityController.dispose();
     _districtController.dispose();
+    _lineIdController.dispose();
     super.dispose();
   }
 
@@ -171,6 +174,28 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                             ],
                           ),
                           const SizedBox(height: 16),
+                          FilledButton.icon(
+                            onPressed: _loginWithLine,
+                            icon: const Icon(Icons.chat_bubble_rounded),
+                            label: const Text('Continue with LINE'),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: const Color(0xFF06C755), // LINE Green
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size.fromHeight(48),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          const Row(
+                            children: [
+                              Expanded(child: Divider()),
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 8),
+                                child: Text('OR'),
+                              ),
+                              Expanded(child: Divider()),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
                           if (_authMode == _AuthMode.signIn) ...<Widget>[
                             TextFormField(
                               controller: _identifierController,
@@ -195,7 +220,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                               keyboardType: TextInputType.emailAddress,
                               textInputAction: TextInputAction.next,
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 16),
                             TextFormField(
                               controller: _phoneController,
                               decoration: const InputDecoration(
@@ -340,6 +365,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                               ),
                             ],
                           ),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: _lineIdController,
+                            decoration: const InputDecoration(
+                                labelText: 'LINE ID (Optional)'),
+                          ),
                           const SizedBox(height: 16),
                           FilledButton(
                             onPressed:
@@ -378,6 +409,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     _skillLevel = user.skillLevel;
     _cityController.text = user.preferredCity ?? '';
     _districtController.text = user.preferredDistrict ?? '';
+    _lineIdController.text = user.lineId ?? '';
+  }
+
+  Future<void> _loginWithLine() async {
+    final Uri url = Uri.base.replace(path: '/api/v1/auth/line/login');
+    await launchUrl(url, webOnlyWindowName: '_self');
   }
 
   Future<void> _submitAuth() async {
@@ -463,6 +500,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   skillLevel: _skillLevel,
                   preferredCity: _cityController.text,
                   preferredDistrict: _districtController.text,
+                  lineId: _lineIdController.text,
                 ),
                 token: session.token,
               );

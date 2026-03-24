@@ -58,6 +58,8 @@ model User {
   avatarUrl         String?       @db.VarChar(500)
   gender            Gender?
   skillLevel        SkillLevel
+  lineId            String?       @db.VarChar(50)
+  lineProviderId    String?       @unique @db.VarChar(255)
   preferredCity     String?       @db.VarChar(50)
   preferredDistrict String?       @db.VarChar(50)
   createdAt         DateTime      @default(now())

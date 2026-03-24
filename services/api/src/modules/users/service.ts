@@ -28,6 +28,7 @@ export class UsersService {
         ...(input.preferredDistrict !== undefined
           ? { preferredDistrict: input.preferredDistrict.trim() }
           : {}),
+        ...(input.lineId !== undefined ? { lineId: input.lineId ? input.lineId.trim() : null } : {}),
       },
       select: {
         id: true,
@@ -37,6 +38,8 @@ export class UsersService {
         skillLevel: true,
         preferredCity: true,
         preferredDistrict: true,
+        phoneNumber: true,
+        lineId: true,
       },
     });
 

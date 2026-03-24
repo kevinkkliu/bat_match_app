@@ -6,6 +6,8 @@ export type UserSummaryDto = {
   skillLevel: 'L1' | 'L2' | 'L3' | 'L4' | 'L5';
   preferredCity: string | null;
   preferredDistrict: string | null;
+  phoneNumber?: string | null;
+  lineId?: string | null;
 };
 
 export type AuthSessionDto = {

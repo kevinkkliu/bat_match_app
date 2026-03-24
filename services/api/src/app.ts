@@ -6,6 +6,7 @@ import type { AppEnv } from './lib/config';
 import { prisma } from './lib/prisma';
 import { normalizeError } from './lib/http';
 import { authRoutes } from './modules/auth/routes';
+import { lineAuthRoutes } from './modules/auth/line';
 import { gamesRoutes } from './modules/games/routes';
 import { healthRoutes } from './modules/health/routes';
 import { joinRequestRoutes } from './modules/join-requests/routes';
@@ -46,6 +47,7 @@ export function buildApp(env: AppEnv): FastifyInstance {
 
   void app.register(healthRoutes, { prefix: '/api/v1/health' });
   void app.register(authRoutes, { prefix: '/api/v1/auth' });
+  void app.register(lineAuthRoutes, { prefix: '/api/v1/auth' });
   void app.register(gamesRoutes, { prefix: '/api/v1/games' });
   void app.register(joinRequestRoutes, { prefix: '/api/v1/join-requests' });
   void app.register(meRoutes, { prefix: '/api/v1/me' });
