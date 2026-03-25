@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../../../core/config/app_config.dart';
+
 class ProfileUser {
   const ProfileUser({
     required this.id,
@@ -28,6 +30,18 @@ class ProfileUser {
     );
   }
 
+  factory ProfileUser.guest() {
+    return const ProfileUser(
+      id: 'guest',
+      nickname: 'Guest',
+      avatarUrl: null,
+      gender: null,
+      skillLevel: 'L1',
+      preferredCity: null,
+      preferredDistrict: null,
+    );
+  }
+
   final String id;
   final String nickname;
   final String? avatarUrl;
@@ -39,16 +53,51 @@ class ProfileUser {
   final String? lineId;
 }
 
+enum ProfileSessionMode {
+  guest,
+  preview,
+  authenticated,
+}
+
 class ProfileSession {
   const ProfileSession({
     required this.user,
     required this.token,
+    required this.mode,
   });
+
+  factory ProfileSession.guest() {
+    return ProfileSession(
+      user: ProfileUser.guest(),
+      token: null,
+      mode: ProfileSessionMode.guest,
+    );
+  }
+
+  factory ProfileSession.preview(ProfileUser user) {
+    return ProfileSession(
+      user: user,
+      token: null,
+      mode: ProfileSessionMode.preview,
+    );
+  }
+
+  factory ProfileSession.authenticated(ProfileUser user, String token) {
+    return ProfileSession(
+      user: user,
+      token: token,
+      mode: ProfileSessionMode.authenticated,
+    );
+  }
 
   final ProfileUser user;
   final String? token;
+  final ProfileSessionMode mode;
 
   bool get isAuthenticated => token != null && token!.isNotEmpty;
+  bool get isGuest => mode == ProfileSessionMode.guest;
+  bool get isPreview => mode == ProfileSessionMode.preview;
+  bool get hasServerIdentity => !isGuest;
 }
 
 class ProfileRegisterInput {
@@ -138,18 +187,27 @@ class ProfileRepository {
     final String? token = await _storage.read(key: tokenStorageKey);
 
     if (token == null || token.isEmpty) {
+      if (AppConfig.devUserEmail.isEmpty) {
+        return ProfileSession.guest();
+      }
+
       final ProfileUser user = await fetchCurrentUser();
-      return ProfileSession(user: user, token: null);
+      return ProfileSession.preview(user);
     }
 
     try {
       final ProfileUser user = await fetchCurrentUser(token: token);
-      return ProfileSession(user: user, token: token);
+      return ProfileSession.authenticated(user, token);
     } on DioException catch (error) {
       if (_isUnauthorized(error)) {
         await clearSession();
+
+        if (AppConfig.devUserEmail.isEmpty) {
+          return ProfileSession.guest();
+        }
+
         final ProfileUser user = await fetchCurrentUser();
-        return ProfileSession(user: user, token: null);
+        return ProfileSession.preview(user);
       }
 
       rethrow;
@@ -162,9 +220,9 @@ class ProfileRepository {
       data: input.toJson(),
     );
     final Map<String, dynamic> data = Map<String, dynamic>.from(response.data as Map);
-    final ProfileSession session = ProfileSession(
-      user: ProfileUser.fromJson(Map<String, dynamic>.from(data['user'] as Map)),
-      token: data['token'] as String,
+    final ProfileSession session = ProfileSession.authenticated(
+      ProfileUser.fromJson(Map<String, dynamic>.from(data['user'] as Map)),
+      data['token'] as String,
     );
 
     await _storage.write(key: tokenStorageKey, value: session.token);
@@ -177,9 +235,9 @@ class ProfileRepository {
       data: input.toJson(),
     );
     final Map<String, dynamic> data = Map<String, dynamic>.from(response.data as Map);
-    final ProfileSession session = ProfileSession(
-      user: ProfileUser.fromJson(Map<String, dynamic>.from(data['user'] as Map)),
-      token: data['token'] as String,
+    final ProfileSession session = ProfileSession.authenticated(
+      ProfileUser.fromJson(Map<String, dynamic>.from(data['user'] as Map)),
+      data['token'] as String,
     );
 
     await _storage.write(key: tokenStorageKey, value: session.token);
@@ -230,7 +288,6 @@ class ProfileRepository {
     return Options(
       headers: <String, dynamic>{
         'Authorization': 'Bearer $token',
-        'x-dev-user-email': '',
       },
     );
   }

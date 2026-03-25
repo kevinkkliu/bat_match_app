@@ -8,6 +8,6 @@ class AppConfig {
 
   static const String devUserEmail = String.fromEnvironment(
     'DEV_USER_EMAIL',
-    defaultValue: 'kevin.seed@example.com',
+    defaultValue: '',
   );
 }

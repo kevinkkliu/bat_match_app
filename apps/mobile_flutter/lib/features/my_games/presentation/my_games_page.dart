@@ -5,7 +5,10 @@ import 'package:go_router/go_router.dart';
 import '../../../app/app_routes.dart';
 import '../../../shared/models/game_summary.dart';
 import '../../../shared/widgets/async_state_view.dart';
+import '../../../shared/widgets/auth_required_card.dart';
 import '../../../shared/widgets/section_card.dart';
+import '../../profile/application/profile_providers.dart';
+import '../../profile/data/profile_repository.dart';
 import '../application/my_games_providers.dart';
 
 class MyGamesPage extends ConsumerWidget {
@@ -13,6 +16,45 @@ class MyGamesPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final AsyncValue<ProfileSession> sessionAsync =
+        ref.watch(profileSessionProvider);
+
+    if (sessionAsync.isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (sessionAsync.hasError) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('My Games')),
+        body: Padding(
+          padding: const EdgeInsets.all(20),
+          child: SectionCard(
+            title: 'My Games',
+            subtitle: 'Could not load your account state.',
+            child: Text(sessionAsync.error.toString()),
+          ),
+        ),
+      );
+    }
+
+    final ProfileSession session = sessionAsync.requireValue;
+    if (!session.hasServerIdentity) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('My Games')),
+        body: Padding(
+          padding: const EdgeInsets.all(20),
+          child: AuthRequiredCard(
+            title: 'Your schedule is available after sign-in',
+            message:
+                'Guests can browse live matches, but joined and created games are only available for signed-in accounts.',
+            onSignInPressed: () => context.go(AppRoutePaths.profile),
+          ),
+        ),
+      );
+    }
+
     final AsyncValue<List<GameSummary>> joinedAsync =
         ref.watch(joinedGamesProvider);
     final AsyncValue<List<GameSummary>> createdAsync =

@@ -1,13 +1,18 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../app/app_routes.dart';
 import '../../../shared/models/game_summary.dart';
 import '../../../shared/widgets/async_state_view.dart';
+import '../../../shared/widgets/auth_required_card.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../games/application/games_providers.dart';
 import '../../games/data/games_repository.dart';
 import '../../my_games/application/my_games_providers.dart';
+import '../../profile/application/profile_providers.dart';
+import '../../profile/data/profile_repository.dart';
 import '../application/game_requests_providers.dart';
 
 class GameRequestsPage extends ConsumerStatefulWidget {
@@ -28,6 +33,45 @@ class _GameRequestsPageState extends ConsumerState<GameRequestsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final AsyncValue<ProfileSession> sessionAsync =
+        ref.watch(profileSessionProvider);
+
+    if (sessionAsync.isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (sessionAsync.hasError) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Join Requests')),
+        body: Padding(
+          padding: const EdgeInsets.all(20),
+          child: SectionCard(
+            title: 'Join Requests',
+            subtitle: 'Could not load your account state.',
+            child: Text(sessionAsync.error.toString()),
+          ),
+        ),
+      );
+    }
+
+    final ProfileSession session = sessionAsync.requireValue;
+    if (!session.hasServerIdentity) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Join Requests')),
+        body: Padding(
+          padding: const EdgeInsets.all(20),
+          child: AuthRequiredCard(
+            title: 'Host moderation is locked for guests',
+            message:
+                'Sign in before reviewing or managing join requests for a game.',
+            onSignInPressed: () => context.go(AppRoutePaths.profile),
+          ),
+        ),
+      );
+    }
+
     final AsyncValue<GameDetail> detailAsync =
         ref.watch(gameDetailProvider(widget.gameId));
     final AsyncValue<List<JoinRequestSummary>> requestsAsync =

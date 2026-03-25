@@ -107,7 +107,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   SectionCard(
                     title: 'Account status',
                     subtitle:
-                        'Sign in stores a real session; preview mode still uses the seeded dev user.',
+                        'Guest mode can browse games. Sign in unlocks create, join, and My Games.',
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
@@ -115,7 +115,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           label: 'Session',
                           value: session.isAuthenticated
                               ? 'JWT saved securely'
-                              : 'Preview mode via dev header',
+                              : session.isPreview
+                                  ? 'Preview mode via dev header'
+                                  : 'Guest browsing only',
                         ),
                         const SizedBox(height: 12),
                         _StatusRow(
@@ -373,8 +375,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           ),
                           const SizedBox(height: 16),
                           FilledButton(
-                            onPressed:
-                                _busy ? null : () => _saveProfile(session),
+                            onPressed: _busy || !session.hasServerIdentity
+                                ? null
+                                : () => _saveProfile(session),
                             child: const Text('Save profile'),
                           ),
                           const SizedBox(height: 12),
@@ -610,10 +613,16 @@ class _ProfileHero extends StatelessWidget {
                 ),
                 const Spacer(),
                 _HeroBadge(
-                  label: isAuthenticated ? 'Signed in' : 'Preview',
+                  label: isAuthenticated
+                      ? 'Signed in'
+                      : user.id == 'guest'
+                          ? 'Guest'
+                          : 'Preview',
                   icon: isAuthenticated
                       ? Icons.verified_rounded
-                      : Icons.visibility_rounded,
+                      : user.id == 'guest'
+                          ? Icons.person_outline_rounded
+                          : Icons.visibility_rounded,
                 ),
               ],
             ),

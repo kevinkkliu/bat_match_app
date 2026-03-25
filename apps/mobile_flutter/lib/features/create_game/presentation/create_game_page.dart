@@ -5,9 +5,12 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../shared/models/game_summary.dart';
+import '../../../shared/widgets/auth_required_card.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../games/application/games_providers.dart';
 import '../../games/data/games_repository.dart';
+import '../../profile/application/profile_providers.dart';
+import '../../profile/data/profile_repository.dart';
 
 class CreateGamePage extends ConsumerStatefulWidget {
   const CreateGamePage({super.key});
@@ -53,6 +56,9 @@ class _CreateGamePageState extends ConsumerState<CreateGamePage> {
 
   @override
   Widget build(BuildContext context) {
+    final AsyncValue<ProfileSession> sessionAsync =
+        ref.watch(profileSessionProvider);
+
     return Scaffold(
       body: DecoratedBox(
         decoration: const BoxDecoration(
@@ -66,12 +72,43 @@ class _CreateGamePageState extends ConsumerState<CreateGamePage> {
           ),
         ),
         child: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-            children: <Widget>[
-              _CreateHero(isSubmitting: _submitting),
-              const SizedBox(height: 16),
-              SectionCard(
+          child: sessionAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (Object error, StackTrace _) => ListView(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+              children: <Widget>[
+                _CreateHero(isSubmitting: _submitting),
+                const SizedBox(height: 16),
+                SectionCard(
+                  title: 'Create game',
+                  subtitle: 'Could not load your account state.',
+                  child: Text(error.toString()),
+                ),
+              ],
+            ),
+            data: (ProfileSession session) {
+              if (!session.hasServerIdentity) {
+                return ListView(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                  children: <Widget>[
+                    _CreateHero(isSubmitting: _submitting),
+                    const SizedBox(height: 16),
+                    AuthRequiredCard(
+                      title: 'Host tools are locked for guests',
+                      message:
+                          'Sign in or register before you publish a game. Guests can still browse open matches from Home.',
+                      onSignInPressed: () => context.go(AppRoutePaths.profile),
+                    ),
+                  ],
+                );
+              }
+
+              return ListView(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                children: <Widget>[
+                  _CreateHero(isSubmitting: _submitting),
+                  const SizedBox(height: 16),
+                  SectionCard(
                 title: 'Game basics',
                 subtitle: 'Name the session and set the venue.',
                 child: Column(
@@ -294,7 +331,9 @@ class _CreateGamePageState extends ConsumerState<CreateGamePage> {
                 ),
                 label: Text(_submitting ? 'Creating...' : 'Create game'),
               ),
-            ],
+                ],
+              );
+            },
           ),
         ),
       ),

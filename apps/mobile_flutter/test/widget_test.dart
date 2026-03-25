@@ -1,6 +1,9 @@
 import 'package:bat_dating_app_mobile/app/app.dart';
+import 'package:bat_dating_app_mobile/app/router.dart';
 import 'package:bat_dating_app_mobile/features/games/application/games_providers.dart';
 import 'package:bat_dating_app_mobile/features/games/data/games_repository.dart';
+import 'package:bat_dating_app_mobile/features/profile/application/profile_providers.dart';
+import 'package:bat_dating_app_mobile/features/profile/data/profile_repository.dart';
 import 'package:bat_dating_app_mobile/shared/models/game_summary.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -675,10 +678,32 @@ Finder _verticalScrollableFinder() {
       .last;
 }
 
-Widget _buildTestApp() {
+ProfileSession _authenticatedSession() {
+  return ProfileSession.authenticated(
+    const ProfileUser(
+      id: 'user-current',
+      nickname: 'Current User',
+      avatarUrl: null,
+      gender: null,
+      skillLevel: 'L3',
+      preferredCity: 'Taipei City',
+      preferredDistrict: "Da'an",
+    ),
+    'jwt-token',
+  );
+}
+
+Widget _buildTestApp({
+  ProfileSession? session,
+}) {
+  final ProfileSession resolvedSession = session ?? _authenticatedSession();
+
   return ProviderScope(
     overrides: <Override>[
       gamesRepositoryProvider.overrideWithValue(_FakeGamesRepository()),
+      profileSessionProvider.overrideWith(
+        (Ref ref) async => resolvedSession,
+      ),
     ],
     child: const BatDatingApp(),
   );
@@ -874,5 +899,53 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Request rejected.'), findsOneWidget);
+  });
+
+  testWidgets('guest sees sign-in gate on create page',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(
+      _buildTestApp(session: ProfileSession.guest()),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(NavigationDestination, 'Create'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Host tools are locked for guests'), findsOneWidget);
+    expect(find.text('Go to profile'), findsOneWidget);
+  });
+
+  testWidgets('guest sees sign-in gate on my games page',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(
+      _buildTestApp(session: ProfileSession.guest()),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(NavigationDestination, 'My Games'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Your schedule is available after sign-in'),
+        findsOneWidget);
+  });
+
+  testWidgets('guest sees sign-in gate on game detail join section',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(
+      _buildTestApp(session: ProfileSession.guest()),
+    );
+    await tester.pumpAndSettle();
+
+    appRouter.go('/games/game-open-001');
+    await tester.pumpAndSettle();
+
+    await tester.dragUntilVisible(
+      find.text('Join actions are locked for guests'),
+      find.byType(Scrollable).last,
+      const Offset(0, -300),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sign in to join'), findsOneWidget);
   });
 }

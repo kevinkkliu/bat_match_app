@@ -1,13 +1,18 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../app/app_routes.dart';
 import '../../../shared/models/game_summary.dart';
 import '../../../shared/widgets/async_state_view.dart';
+import '../../../shared/widgets/auth_required_card.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../games/application/games_providers.dart';
 import '../../games/data/games_repository.dart';
 import '../../my_games/application/my_games_providers.dart';
+import '../../profile/application/profile_providers.dart';
+import '../../profile/data/profile_repository.dart';
 
 class GameDetailPage extends ConsumerStatefulWidget {
   const GameDetailPage({
@@ -35,6 +40,8 @@ class _GameDetailPageState extends ConsumerState<GameDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final AsyncValue<ProfileSession> sessionAsync =
+        ref.watch(profileSessionProvider);
     final AsyncValue<GameDetail> detailAsync =
         ref.watch(gameDetailProvider(widget.gameId));
 
@@ -52,11 +59,18 @@ class _GameDetailPageState extends ConsumerState<GameDetailPage> {
           ),
         ),
         child: AsyncStateView(
-          isLoading: detailAsync.isLoading,
-          errorMessage:
-              detailAsync.hasError ? detailAsync.error.toString() : null,
+          isLoading: detailAsync.isLoading || sessionAsync.isLoading,
+          errorMessage: detailAsync.hasError
+              ? detailAsync.error.toString()
+              : sessionAsync.hasError
+                  ? sessionAsync.error.toString()
+                  : null,
           child: detailAsync.maybeWhen(
-            data: (GameDetail detail) => ListView(
+            data: (GameDetail detail) {
+              final ProfileSession session = sessionAsync.valueOrNull ??
+                  ProfileSession.guest();
+
+              return ListView(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
               children: <Widget>[
                 _GameDetailHero(detail: detail),
@@ -283,73 +297,87 @@ class _GameDetailPageState extends ConsumerState<GameDetailPage> {
                       ? 'Request to join'
                       : 'Join this game',
                   subtitle: _joinHelpText(detail),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      if (_canWithdraw(detail)) ...<Widget>[
-                        Text(
-                          _leaveHelpText(detail),
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: const Color(0xFF55655B),
-                                    height: 1.45,
+                  child: session.isGuest
+                      ? AuthRequiredCard(
+                          title: 'Join actions are locked for guests',
+                          message:
+                              'Sign in or register before you request a spot, join a game, or manage an existing request.',
+                          onSignInPressed: () =>
+                              context.go(AppRoutePaths.profile),
+                          buttonLabel: 'Sign in to join',
+                        )
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            if (_canWithdraw(detail)) ...<Widget>[
+                              Text(
+                                _leaveHelpText(detail),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      color: const Color(0xFF55655B),
+                                      height: 1.45,
+                                    ),
+                              ),
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton.icon(
+                                  onPressed: _withdrawing
+                                      ? null
+                                      : () => _handleWithdraw(context, detail),
+                                  icon: const Icon(Icons.logout_rounded),
+                                  label: Text(
+                                    detail.joinSummary.currentUserStatus ==
+                                            'PENDING'
+                                        ? 'Withdraw request'
+                                        : 'Leave game',
                                   ),
-                        ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: _withdrawing
-                                ? null
-                                : () => _handleWithdraw(context, detail),
-                            icon: const Icon(Icons.logout_rounded),
-                            label: Text(
-                              detail.joinSummary.currentUserStatus == 'PENDING'
-                                  ? 'Withdraw request'
-                                  : 'Leave game',
-                            ),
-                          ),
-                        ),
-                      ] else if (_canJoin(detail)) ...<Widget>[
-                        TextField(
-                          controller: _messageController,
-                          maxLines: 3,
-                          decoration: const InputDecoration(
-                            labelText: 'Message to host',
-                            hintText: 'Optional note for the host',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: FilledButton.icon(
-                            onPressed:
-                                _joining ? null : () => _handleJoin(context),
-                            icon: Icon(
-                              detail.approvalMode == 'MANUAL'
-                                  ? Icons.send_rounded
-                                  : Icons.check_circle_rounded,
-                            ),
-                            label: Text(
-                              detail.approvalMode == 'MANUAL'
-                                  ? 'Request to join'
-                                  : 'Join game',
-                            ),
-                          ),
-                        ),
-                      ] else ...<Widget>[
-                        Text(
-                          _joinDisabledText(detail),
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: const Color(0xFF55655B),
-                                    height: 1.45,
+                                ),
+                              ),
+                            ] else if (_canJoin(detail)) ...<Widget>[
+                              TextField(
+                                controller: _messageController,
+                                maxLines: 3,
+                                decoration: const InputDecoration(
+                                  labelText: 'Message to host',
+                                  hintText: 'Optional note for the host',
+                                  border: OutlineInputBorder(),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                width: double.infinity,
+                                child: FilledButton.icon(
+                                  onPressed:
+                                      _joining ? null : () => _handleJoin(context),
+                                  icon: Icon(
+                                    detail.approvalMode == 'MANUAL'
+                                        ? Icons.send_rounded
+                                        : Icons.check_circle_rounded,
                                   ),
+                                  label: Text(
+                                    detail.approvalMode == 'MANUAL'
+                                        ? 'Request to join'
+                                        : 'Join game',
+                                  ),
+                                ),
+                              ),
+                            ] else ...<Widget>[
+                              Text(
+                                _joinDisabledText(detail),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      color: const Color(0xFF55655B),
+                                      height: 1.45,
+                                    ),
+                              ),
+                            ],
+                          ],
                         ),
-                      ],
-                    ],
-                  ),
                 ),
                 if (detail.notes != null &&
                     detail.notes!.isNotEmpty) ...<Widget>[
@@ -367,7 +395,8 @@ class _GameDetailPageState extends ConsumerState<GameDetailPage> {
                   ),
                 ],
               ],
-            ),
+            );
+            },
             orElse: () => const SizedBox.shrink(),
           ),
         ),
