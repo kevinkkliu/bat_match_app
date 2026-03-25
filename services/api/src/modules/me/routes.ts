@@ -15,4 +15,14 @@ export const meRoutes: FastifyPluginAsync = async (app) => {
     const { userId } = assertAuthenticatedUser(request);
     return meService.listCreatedGames(userId);
   });
+
+  app.patch<{ Body: { fcmToken: string } }>(
+    '/fcm-token',
+    { preHandler: requireAuth },
+    async (request) => {
+      const { userId } = assertAuthenticatedUser(request);
+      const { fcmToken } = request.body;
+      return meService.updateFcmToken(userId, fcmToken);
+    }
+  );
 };

@@ -6,7 +6,8 @@ import type { PrismaClient } from '@prisma/client';
 
 import type { AppEnv } from '../../src/lib/config';
 
-const TEST_DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/bat_dating_app_test';
+const TEST_POSTGRES_PORT = process.env.POSTGRES_PORT ?? '5433';
+const TEST_DATABASE_URL = `postgresql://postgres:postgres@localhost:${TEST_POSTGRES_PORT}/bat_dating_app_test`;
 const TEST_JWT_SECRET = 'bat-dating-test-secret-for-integration-only-1234567890';
 
 process.env.NODE_ENV ??= 'test';

@@ -1,6 +1,10 @@
 # bat_dating_app mobile
 
-Flutter app skeleton for the stable-production path.
+Flutter client for the stable-production path.
+
+## Status
+
+The app already covers the main MVP flows: game discovery, game detail, create game, my games, join requests, and profile/account actions. The UI is wired to the live API and the browser preview remains the primary review path.
 
 ## Stack
 

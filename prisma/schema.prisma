@@ -62,6 +62,7 @@ model User {
   lineProviderId    String?       @unique @db.VarChar(255)
   preferredCity     String?       @db.VarChar(50)
   preferredDistrict String?       @db.VarChar(50)
+  fcmToken          String?       @db.VarChar(255)
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
   hostedGames       Game[]        @relation("HostedGames")

@@ -21,6 +21,8 @@ npm run dev
 
 `npm test` uses a dedicated `bat_dating_app_test` database in the local Postgres container, resets it with Prisma, and runs the integration suite for join, approval, rejection, withdraw, and `me/games`.
 
+`npm run db:up` creates the repo-root `.env` from `.env.example` if needed, then starts the compose-managed Postgres on local port `5433`.
+
 ## Browser Preview
 
 The root preview stack serves Flutter web through nginx and keeps the browser on the same origin as the API. That means the preview build uses an empty `API_BASE_URL`, while local `flutter run -d web-server` can still point at `http://localhost:3000`.

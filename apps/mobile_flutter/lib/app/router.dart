@@ -6,8 +6,8 @@ import '../features/game_detail/presentation/game_detail_page.dart';
 import '../features/game_discovery/presentation/game_discovery_page.dart';
 import '../features/game_requests/presentation/game_requests_page.dart';
 import '../features/my_games/presentation/my_games_page.dart';
-import '../features/profile/presentation/profile_page.dart';
 import '../features/profile/presentation/oauth_callback_page.dart';
+import '../features/profile/presentation/profile_page.dart';
 import '../shared/widgets/app_shell.dart';
 import 'app_routes.dart';
 

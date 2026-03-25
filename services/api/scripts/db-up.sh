@@ -1,60 +1,47 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+COMPOSE_FILE="$REPO_ROOT/docker-compose.yml"
+ENV_FILE="$REPO_ROOT/.env"
+ENV_EXAMPLE="$REPO_ROOT/.env.example"
 CONTAINER_NAME="bat-dating-postgres"
-VOLUME_NAME="bat_dating_postgres_data"
+POSTGRES_DB_NAME="${POSTGRES_DB:-bat_dating_app}"
+POSTGRES_USER_NAME="${POSTGRES_USER:-postgres}"
 
-if ! docker volume inspect "$VOLUME_NAME" >/dev/null 2>&1; then
-  docker volume create "$VOLUME_NAME" >/dev/null
-fi
+resolve_docker_cmd() {
+  if command -v docker.exe >/dev/null 2>&1; then
+    echo "docker.exe"
+    return
+  fi
 
-if docker ps --format '{{.Names}}' | grep -qx "$CONTAINER_NAME"; then
-  echo "Postgres container is already running."
-  for _ in $(seq 1 30); do
-    if docker exec "$CONTAINER_NAME" pg_isready -U postgres -d bat_dating_app >/dev/null 2>&1; then
-      echo "Postgres is ready."
-      exit 0
-    fi
-    sleep 1
-  done
-  echo "Postgres container is running but did not become ready in time." >&2
+  if command -v docker >/dev/null 2>&1; then
+    echo "docker"
+    return
+  fi
+
+  echo "Docker CLI is not available in PATH." >&2
   exit 1
+}
+
+DOCKER_CMD="$(resolve_docker_cmd)"
+
+if [ ! -f "$ENV_FILE" ] && [ -f "$ENV_EXAMPLE" ]; then
+  cp "$ENV_EXAMPLE" "$ENV_FILE"
+  echo "Created $ENV_FILE from .env.example."
 fi
 
-if docker ps -a --format '{{.Names}}' | grep -qx "$CONTAINER_NAME"; then
-  docker start "$CONTAINER_NAME" >/dev/null
-  echo "Postgres container started."
-  for _ in $(seq 1 30); do
-    if docker exec "$CONTAINER_NAME" pg_isready -U postgres -d bat_dating_app >/dev/null 2>&1; then
-      echo "Postgres is ready."
-      exit 0
-    fi
-    sleep 1
-  done
-  echo "Postgres container started but did not become ready in time." >&2
-  exit 1
-fi
-
-docker run -d \
-  --name "$CONTAINER_NAME" \
-  --restart unless-stopped \
-  -e POSTGRES_DB=bat_dating_app \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=postgres \
-  -e TZ=Asia/Taipei \
-  -p 5432:5432 \
-  -v "$VOLUME_NAME:/var/lib/postgresql/data" \
-  postgres:16-alpine >/dev/null
-
-echo "Postgres container created and started."
+"$DOCKER_CMD" compose -f "$COMPOSE_FILE" up -d postgres >/dev/null
+echo "Postgres container is starting."
 
 for _ in $(seq 1 30); do
-  if docker exec "$CONTAINER_NAME" pg_isready -U postgres -d bat_dating_app >/dev/null 2>&1; then
+  if "$DOCKER_CMD" exec "$CONTAINER_NAME" \
+    pg_isready -U "$POSTGRES_USER_NAME" -d "$POSTGRES_DB_NAME" >/dev/null 2>&1; then
     echo "Postgres is ready."
     exit 0
   fi
   sleep 1
 done
 
-echo "Postgres container started but did not become ready in time." >&2
+echo "Postgres container did not become ready in time." >&2
 exit 1

@@ -1,4 +1,6 @@
 *.md text eol=lf
+*.sh text eol=lf
+*.dart text eol=lf
 *.js text eol=lf
 *.json text eol=lf
 *.ts text eol=lf

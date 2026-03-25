@@ -1,0 +1,20 @@
+services:
+  api:
+    environment:
+      NODE_ENV: development
+    command:
+      - node
+      - --inspect=0.0.0.0:9229
+      - --import
+      - tsx
+      - src/server.ts
+    ports:
+      - "127.0.0.1:${API_PORT:-3000}:3000"
+      - "127.0.0.1:${API_DEBUG_PORT:-19239}:9229"
+    volumes:
+      - ./services/api:/app/services/api
+      - ./prisma:/app/prisma
+      - api_node_modules:/app/services/api/node_modules
+
+volumes:
+  api_node_modules:
