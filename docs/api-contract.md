@@ -2,9 +2,9 @@
 
 This document is the stable contract target for the new stack:
 
-- Flutter client: `/mnt/d/Project/bat_dating_app/apps/mobile_flutter`
-- API service: `/mnt/d/Project/bat_dating_app/services/api`
-- Data schema source: `/mnt/d/Project/bat_dating_app/prisma/schema.prisma`
+- Flutter client: `<path_to_your_project>/apps/mobile_flutter`
+- API service: `<path_to_your_project>/services/api`
+- Data schema source: `<path_to_your_project>/prisma/schema.prisma`
 
 ## Contract Rules
 
@@ -125,6 +125,7 @@ This document is the stable contract target for the new stack:
   "approvalMode": "AUTO",
   "status": "OPEN",
   "notes": "Bring indoor shoes.",
+  "canViewHostContact": true,
   "host": {
     "id": "uuid",
     "nickname": "Kevin",
@@ -143,6 +144,14 @@ This document is the stable contract target for the new stack:
   }
 }
 ```
+
+Host contact visibility rules:
+
+- The host can always view their own contact fields in `GameDetail`
+- An authenticated player can view host contact only when their join request is `APPROVED` and the game is not `CANCELLED` or `COMPLETED`
+- `PENDING`, `REJECTED`, `WITHDRAWN`, `CANCELLED`, and `COMPLETED` states do not unlock contact for non-host users
+- The API also returns `canViewHostContact` so the client can gate UI without inferring from null checks alone
+- When `canViewHostContact` is `false`, the response omits `host.phoneNumber` and `host.lineId` for non-host users
 
 ### `JoinRequestDto`
 
@@ -184,6 +193,26 @@ This document is the stable contract target for the new stack:
 ## Authentication
 
 ### `POST /api/v1/auth/register`
+
+At least one of `email` or `phoneNumber` is required. Empty strings are treated as missing values.
+
+Validation failure example:
+
+```json
+{
+  "error": "VALIDATION_ERROR",
+  "message": "Request validation failed.",
+  "details": {
+    "issues": [
+      {
+        "path": "email",
+        "message": "Provide at least one of email or phoneNumber.",
+        "code": "custom"
+      }
+    ]
+  }
+}
+```
 
 Request:
 
@@ -283,6 +312,8 @@ Query:
 
 Notes:
 
+- By default, this endpoint returns only upcoming games with `status` in `OPEN` or `FULL`
+- Supplying `date`, `startAtFrom`, or `startAtTo` overrides the default upcoming window
 - `vacancyOnly=true` returns only games with `status=OPEN` and `availableSpots > 0`
 - `feeMin` and `feeMax` filter by the numeric `fee` field
 
@@ -418,7 +449,14 @@ Response `201`:
 
 ### `GET /api/v1/games/:gameId/join-requests`
 
-Host-only, authenticated endpoint.
+Host-only, authenticated participant-list endpoint for the game.
+
+Notes:
+
+- Non-host callers receive `403 FORBIDDEN`
+- This list remains available to the host even after the game is `CANCELLED` or `COMPLETED`
+- The returned request statuses reflect the current server state, including cancellation cascades
+- This is the canonical host-management view for reviewing participants before and after a game lifecycle change
 
 Response `200`:
 
@@ -470,13 +508,18 @@ Response `200`: `JoinRequestDto`
 
 ### `PATCH /api/v1/join-requests/:joinRequestId/withdraw`
 
+Withdraw is only allowed while the join request is still active and the parent game is neither `CANCELLED` nor `COMPLETED`.
+If the request is already inactive, the API returns `409 INVALID_JOIN_REQUEST_STATE`.
+If the game has already been cancelled or completed, the API returns `409 GAME_NOT_WITHDRAWABLE`.
+
 Response `200`: `JoinRequestDto`
 
 ## My Games
 
 ### `GET /api/v1/me/games/joined`
 
-Authenticated endpoint for the current user.
+Authenticated endpoint for the current user. Returns upcoming joined games only.
+Cancelled and completed games are excluded from this list.
 
 Response `200`:
 
@@ -491,7 +534,8 @@ Response `200`:
 
 ### `GET /api/v1/me/games/created`
 
-Authenticated endpoint for the current user.
+Authenticated endpoint for the current user. Returns upcoming hosted games only and excludes completed games.
+Cancelled games remain in the list while they are still future-dated; completed games do not.
 
 Response `200`:
 

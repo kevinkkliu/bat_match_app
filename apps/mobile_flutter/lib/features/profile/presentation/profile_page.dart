@@ -3,7 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/config/app_config.dart';
+import '../../../shared/models/skill_level.dart';
 import '../../../shared/widgets/section_card.dart';
+import '../../../shared/widgets/status_callout.dart';
+import '../../../shared/widgets/user_avatar.dart';
 import '../application/profile_providers.dart';
 import '../data/profile_repository.dart';
 
@@ -81,8 +85,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
                 children: <Widget>[
                   SectionCard(
-                    title: 'Profile',
-                    subtitle: 'Could not load the current account.',
+                    title: '個人資料',
+                    subtitle: '無法載入目前帳號。',
                     child: Text(
                       error.toString(),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -101,33 +105,67 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 children: <Widget>[
                   _ProfileHero(
                     user: session.user,
-                    isAuthenticated: session.isAuthenticated,
+                    session: session,
                   ),
                   const SizedBox(height: 16),
                   SectionCard(
-                    title: 'Account status',
-                    subtitle:
-                        'Guest mode can browse games. Sign in unlocks create, join, and My Games.',
+                    title: 'MVP 核心欄位',
+                    subtitle: '先把這四項填好，系統才更容易幫你媒合；其他欄位都可以之後再補。',
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: <Widget>[
+                        _CoreFieldChip(
+                          icon: Icons.badge_outlined,
+                          label: '暱稱',
+                        ),
+                        _CoreFieldChip(
+                          icon: Icons.sports_tennis_rounded,
+                          label: '程度',
+                        ),
+                        _CoreFieldChip(
+                          icon: Icons.location_city_rounded,
+                          label: '偏好城市',
+                        ),
+                        _CoreFieldChip(
+                          icon: Icons.map_outlined,
+                          label: '偏好行政區',
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SectionCard(
+                    title: '帳號狀態',
+                    subtitle: '訪客可先瀏覽場次；登入後才能保存資料、開團與管理申請。',
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         _StatusRow(
-                          label: 'Session',
-                          value: session.isAuthenticated
-                              ? 'JWT saved securely'
-                              : session.isPreview
-                                  ? 'Preview mode via dev header'
-                                  : 'Guest browsing only',
+                          label: '登入狀態',
+                          value: _sessionAccessLabel(session),
                         ),
                         const SizedBox(height: 12),
                         _StatusRow(
-                          label: 'Current user',
-                          value: session.user.nickname,
+                          label: '目前使用者',
+                          value:
+                              session.isGuest ? '尚未登入' : session.user.nickname,
                         ),
                         const SizedBox(height: 12),
-                        _StatusRow(
-                          label: 'Skill',
-                          value: session.user.skillLevel,
+                        _SkillStatusRow(
+                          label: '程度',
+                          value: skillLevelLabel(session.user.skillLevel),
+                          helperText:
+                              skillLevelHelperText(session.user.skillLevel),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _sessionAccessHint(session),
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: const Color(0xFF627266),
+                                    height: 1.45,
+                                  ),
                         ),
                         if (_busy) ...<Widget>[
                           const SizedBox(height: 16),
@@ -138,12 +176,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   ),
                   const SizedBox(height: 16),
                   SectionCard(
-                    title: _authMode == _AuthMode.signIn
-                        ? 'Sign in'
-                        : 'Create account',
+                    title: _authMode == _AuthMode.signIn ? '登入' : '註冊',
                     subtitle: _authMode == _AuthMode.signIn
-                        ? 'Use email or phone to unlock a persistent session.'
-                        : 'Use the profile fields below for nickname and skill level.',
+                        ? '使用 Email、手機或 LINE 進入；登入後才會保存個人資料與報名狀態。'
+                        : '建立帳號前，請先補齊暱稱、程度與偏好城市 / 行政區。',
                     child: Form(
                       key: _authFormKey,
                       child: Column(
@@ -167,11 +203,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                             children: const <Widget>[
                               Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 10),
-                                child: Text('Sign in'),
+                                child: Text('登入'),
                               ),
                               Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 10),
-                                child: Text('Register'),
+                                child: Text('註冊'),
                               ),
                             ],
                           ),
@@ -179,9 +215,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           FilledButton.icon(
                             onPressed: _loginWithLine,
                             icon: const Icon(Icons.chat_bubble_rounded),
-                            label: const Text('Continue with LINE'),
+                            label: const Text('使用 LINE 登入 / 註冊'),
                             style: FilledButton.styleFrom(
-                              backgroundColor: const Color(0xFF06C755), // LINE Green
+                              backgroundColor:
+                                  const Color(0xFF06C755), // LINE Green
                               foregroundColor: Colors.white,
                               minimumSize: const Size.fromHeight(48),
                             ),
@@ -192,7 +229,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                               Expanded(child: Divider()),
                               Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 8),
-                                child: Text('OR'),
+                                child: Text('或'),
                               ),
                               Expanded(child: Divider()),
                             ],
@@ -202,12 +239,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                             TextFormField(
                               controller: _identifierController,
                               decoration: const InputDecoration(
-                                labelText: 'Email or phone',
+                                labelText: 'Email 或手機（必填）',
+                                helperText: '登入時請輸入你註冊帳號時用的 Email 或手機。',
                               ),
                               textInputAction: TextInputAction.next,
                               validator: (String? value) {
                                 if (value == null || value.trim().isEmpty) {
-                                  return 'Email or phone is required.';
+                                  return '請輸入 Email 或手機，才能登入。';
                                 }
                                 return null;
                               },
@@ -217,31 +255,37 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                             TextFormField(
                               controller: _emailController,
                               decoration: const InputDecoration(
-                                labelText: 'Email',
+                                labelText: 'Email（至少填一項）',
+                                helperText: '如果沒有手機，也可以只填 Email。',
                               ),
                               keyboardType: TextInputType.emailAddress,
                               textInputAction: TextInputAction.next,
+                              validator: _validateRegisterContact,
                             ),
                             const SizedBox(height: 16),
                             TextFormField(
                               controller: _phoneController,
                               decoration: const InputDecoration(
-                                labelText: 'Phone number',
+                                labelText: '手機號碼（至少填一項）',
+                                helperText: '如果沒有 Email，也可以只填手機號碼。',
                               ),
                               keyboardType: TextInputType.phone,
                               textInputAction: TextInputAction.next,
+                              validator: (_) => null,
                             ),
                             const SizedBox(height: 12),
                           ],
                           TextFormField(
                             controller: _passwordController,
-                            decoration:
-                                const InputDecoration(labelText: 'Password'),
+                            decoration: const InputDecoration(
+                              labelText: '密碼（至少 8 碼）',
+                              helperText: '請使用至少 8 個字元，登入後才能保存資料。',
+                            ),
                             obscureText: true,
                             textInputAction: TextInputAction.done,
                             validator: (String? value) {
                               if (value == null || value.trim().length < 8) {
-                                return 'Password must be at least 8 characters.';
+                                return '密碼至少需要 8 個字元。';
                               }
                               return null;
                             },
@@ -254,8 +298,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                                   onPressed: _busy ? null : _submitAuth,
                                   child: Text(
                                     _authMode == _AuthMode.signIn
-                                        ? 'Sign in'
-                                        : 'Create account',
+                                        ? '登入'
+                                        : '建立帳號',
                                   ),
                                 ),
                               ),
@@ -267,9 +311,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   ),
                   const SizedBox(height: 16),
                   SectionCard(
-                    title: 'Profile settings',
-                    subtitle:
-                        'These fields map directly to the API profile record.',
+                    title: '個人資料設定',
+                    subtitle: '上方四個欄位是 MVP 核心；這裡的資料會直接對應到 API，登入後才能真正保存。',
                     child: Form(
                       key: _profileFormKey,
                       child: Column(
@@ -277,11 +320,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         children: <Widget>[
                           TextFormField(
                             controller: _nicknameController,
-                            decoration:
-                                const InputDecoration(labelText: 'Nickname'),
+                            decoration: const InputDecoration(
+                              labelText: '暱稱（必填）',
+                              helperText: '主揪與球友會看到這個名稱。',
+                            ),
                             validator: (String? value) {
                               if (value == null || value.trim().isEmpty) {
-                                return 'Nickname is required.';
+                                return '請輸入暱稱，主揪與球友才找得到你。';
                               }
                               return null;
                             },
@@ -289,8 +334,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           const SizedBox(height: 12),
                           TextFormField(
                             controller: _avatarController,
-                            decoration:
-                                const InputDecoration(labelText: 'Avatar URL'),
+                            decoration: const InputDecoration(
+                              labelText: '大頭貼網址（選填）',
+                              helperText: '沒有也沒關係，之後再補上即可。',
+                            ),
                             keyboardType: TextInputType.url,
                           ),
                           const SizedBox(height: 12),
@@ -300,18 +347,19 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                                 child: DropdownButtonFormField<String>(
                                   initialValue: _gender,
                                   decoration: const InputDecoration(
-                                      labelText: 'Gender'),
+                                    labelText: '性別（選填）',
+                                  ),
                                   items: const <DropdownMenuItem<String>>[
                                     DropdownMenuItem(
                                       value: 'UNDISCLOSED',
-                                      child: Text('UNDISCLOSED'),
+                                      child: Text('未公開'),
                                     ),
                                     DropdownMenuItem(
-                                        value: 'MALE', child: Text('MALE')),
+                                        value: 'MALE', child: Text('男')),
                                     DropdownMenuItem(
-                                        value: 'FEMALE', child: Text('FEMALE')),
+                                        value: 'FEMALE', child: Text('女')),
                                     DropdownMenuItem(
-                                        value: 'OTHER', child: Text('OTHER')),
+                                        value: 'OTHER', child: Text('其他')),
                                   ],
                                   onChanged: (String? value) {
                                     if (value != null) {
@@ -324,19 +372,32 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                               Expanded(
                                 child: DropdownButtonFormField<String>(
                                   initialValue: _skillLevel,
-                                  decoration: const InputDecoration(
-                                      labelText: 'Skill level'),
+                                  decoration: InputDecoration(
+                                    labelText: '程度（必填）',
+                                    helperText:
+                                        skillLevelHelperText(_skillLevel),
+                                  ),
                                   items: const <DropdownMenuItem<String>>[
                                     DropdownMenuItem(
-                                        value: 'L1', child: Text('L1')),
+                                      value: 'L1',
+                                      child: Text('L1 新手'),
+                                    ),
                                     DropdownMenuItem(
-                                        value: 'L2', child: Text('L2')),
+                                      value: 'L2',
+                                      child: Text('L2 初階'),
+                                    ),
                                     DropdownMenuItem(
-                                        value: 'L3', child: Text('L3')),
+                                      value: 'L3',
+                                      child: Text('L3 中階'),
+                                    ),
                                     DropdownMenuItem(
-                                        value: 'L4', child: Text('L4')),
+                                      value: 'L4',
+                                      child: Text('L4 進階'),
+                                    ),
                                     DropdownMenuItem(
-                                        value: 'L5', child: Text('L5')),
+                                      value: 'L5',
+                                      child: Text('L5 競技'),
+                                    ),
                                   ],
                                   onChanged: (String? value) {
                                     if (value != null) {
@@ -354,7 +415,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                                 child: TextFormField(
                                   controller: _cityController,
                                   decoration: const InputDecoration(
-                                      labelText: 'Preferred city'),
+                                    labelText: '偏好城市（必填）',
+                                    helperText: '例：台北市、台中市、台南市。',
+                                  ),
+                                  validator: (String? value) {
+                                    if (value == null || value.trim().isEmpty) {
+                                      return '請填偏好城市，方便媒合附近球局。';
+                                    }
+                                    return null;
+                                  },
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -362,7 +431,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                                 child: TextFormField(
                                   controller: _districtController,
                                   decoration: const InputDecoration(
-                                      labelText: 'Preferred district'),
+                                    labelText: '偏好行政區（必填）',
+                                    helperText: '例：大安區、北屯區、東區。',
+                                  ),
+                                  validator: (String? value) {
+                                    if (value == null || value.trim().isEmpty) {
+                                      return '請填偏好行政區，方便縮小搜尋範圍。';
+                                    }
+                                    return null;
+                                  },
                                 ),
                               ),
                             ],
@@ -371,21 +448,33 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           TextFormField(
                             controller: _lineIdController,
                             decoration: const InputDecoration(
-                                labelText: 'LINE ID (Optional)'),
+                              labelText: 'LINE ID（選填）',
+                              helperText: '只有你自己願意公開時再填；核准後才有機會用來聯絡。',
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          const StatusCallout(
+                            title: '聯絡資料只在核准後公開',
+                            message:
+                                '電話與 LINE ID 會在主揪接受後才對對方可見；訪客、待審核、被拒絕或已撤回都看不到。',
+                            icon: Icons.privacy_tip_rounded,
+                            tone: StatusCalloutTone.info,
                           ),
                           const SizedBox(height: 16),
                           FilledButton(
                             onPressed: _busy || !session.hasServerIdentity
                                 ? null
                                 : () => _saveProfile(session),
-                            child: const Text('Save profile'),
+                            child: Text(
+                              session.hasServerIdentity ? '儲存資料' : '請先登入後儲存',
+                            ),
                           ),
                           const SizedBox(height: 12),
                           OutlinedButton(
                             onPressed: _busy || !session.isAuthenticated
                                 ? null
                                 : () => _logout(),
-                            child: const Text('Logout'),
+                            child: const Text('登出'),
                           ),
                         ],
                       ),
@@ -416,7 +505,22 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   Future<void> _loginWithLine() async {
-    final Uri url = Uri.base.replace(path: '/api/v1/auth/line/login');
+    final Uri currentPage = Uri.base;
+    final Uri callbackTarget = currentPage.replace(
+      path: '/auth/callback',
+      queryParameters: <String, String>{},
+      fragment: '',
+    );
+    final String loginBase = AppConfig.apiBaseUrl.isNotEmpty
+        ? AppConfig.apiBaseUrl
+        : currentPage.origin;
+    final Uri url = Uri.parse(
+      '$loginBase/api/v1/auth/line/login',
+    ).replace(
+      queryParameters: <String, String>{
+        'redirectTo': callbackTarget.toString(),
+      },
+    );
     await launchUrl(url, webOnlyWindowName: '_self');
   }
 
@@ -452,7 +556,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             : _phoneController.text.trim();
 
         if (email == null && phone == null) {
-          _showSnackBar('Email or phone is required for registration.');
+          _showSnackBar('註冊時請輸入 Email 或手機。');
           return;
         }
 
@@ -470,9 +574,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       ref.invalidate(profileSessionProvider);
       await ref.read(profileSessionProvider.future);
       _showSnackBar(
-        _authMode == _AuthMode.signIn
-            ? 'Signed in successfully.'
-            : 'Account created successfully.',
+        _authMode == _AuthMode.signIn ? '登入成功。' : '帳號建立成功。',
       );
     } on DioException catch (error) {
       _showSnackBar(_extractErrorMessage(error));
@@ -511,7 +613,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       _syncFormControllers(updated);
       ref.invalidate(profileSessionProvider);
       await ref.read(profileSessionProvider.future);
-      _showSnackBar('Profile saved.');
+      _showSnackBar('資料已儲存。');
     } on DioException catch (error) {
       _showSnackBar(_extractErrorMessage(error));
     } catch (error) {
@@ -531,7 +633,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       _loadedUserId = null;
       ref.invalidate(profileSessionProvider);
       await ref.read(profileSessionProvider.future);
-      _showSnackBar('Logged out.');
+      _showSnackBar('已登出。');
     } catch (error) {
       _showSnackBar(error.toString());
     } finally {
@@ -561,18 +663,101 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       }
     }
 
-    return error.message ?? 'Something went wrong.';
+    return error.message ?? '發生未知錯誤。';
   }
+
+  String? _validateRegisterContact(String? value) {
+    final String email = _emailController.text.trim();
+    final String phone = _phoneController.text.trim();
+
+    if (email.isEmpty && phone.isEmpty) {
+      return 'Email 或手機至少填一項，才能建立帳號。';
+    }
+
+    return null;
+  }
+}
+
+String _sessionAccessLabel(ProfileSession session) {
+  if (session.isAuthenticated) {
+    return '正式登入';
+  }
+
+  if (session.isPreview) {
+    return '預覽登入';
+  }
+
+  return '訪客試用';
+}
+
+String _sessionAccessHint(ProfileSession session) {
+  if (session.isAuthenticated) {
+    return '你已經登入，可直接保存資料、開團、加入球局與管理申請。';
+  }
+
+  if (session.isPreview) {
+    return '這是預覽登入，可直接操作示範帳號；重新整理後會回到預覽狀態。';
+  }
+
+  return '訪客可以先瀏覽與試填，按下儲存前請先登入或註冊，資料才會寫入帳號。';
+}
+
+String _sessionBadgeLabel(ProfileSession session) {
+  if (session.isAuthenticated) {
+    return '已登入';
+  }
+
+  if (session.isPreview) {
+    return '預覽帳號';
+  }
+
+  return '訪客試用';
+}
+
+IconData _sessionBadgeIcon(ProfileSession session) {
+  if (session.isAuthenticated) {
+    return Icons.verified_rounded;
+  }
+
+  if (session.isPreview) {
+    return Icons.visibility_rounded;
+  }
+
+  return Icons.person_outline_rounded;
+}
+
+String _preferredLocationLabel(ProfileUser user) {
+  final String city = user.preferredCity?.trim() ?? '';
+  final String district = user.preferredDistrict?.trim() ?? '';
+
+  if (city.isEmpty && district.isEmpty) {
+    return '尚未設定偏好城市 / 行政區';
+  }
+
+  if (city.isEmpty) {
+    return district;
+  }
+
+  if (district.isEmpty) {
+    return city;
+  }
+
+  return '$city · $district';
+}
+
+String _sessionSummary(ProfileSession session) {
+  return '${skillLevelHelperText(session.user.skillLevel)}'
+      '${session.isGuest ? '（訪客模式不會保存這些設定）' : ''}';
 }
 
 class _ProfileHero extends StatelessWidget {
   const _ProfileHero({
     required this.user,
-    required this.isAuthenticated,
+    required this.session,
   });
 
   final ProfileUser user;
-  final bool isAuthenticated;
+  final ProfileSession session;
 
   @override
   Widget build(BuildContext context) {
@@ -598,31 +783,17 @@ class _ProfileHero extends StatelessWidget {
           children: <Widget>[
             Row(
               children: <Widget>[
-                CircleAvatar(
+                UserAvatar(
+                  name: user.nickname,
+                  avatarUrl: user.avatarUrl,
                   radius: 24,
                   backgroundColor: Colors.white.withValues(alpha: 0.16),
-                  child: Text(
-                    user.nickname.isNotEmpty
-                        ? user.nickname.substring(0, 1).toUpperCase()
-                        : '?',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
+                  foregroundColor: Colors.white,
                 ),
                 const Spacer(),
                 _HeroBadge(
-                  label: isAuthenticated
-                      ? 'Signed in'
-                      : user.id == 'guest'
-                          ? 'Guest'
-                          : 'Preview',
-                  icon: isAuthenticated
-                      ? Icons.verified_rounded
-                      : user.id == 'guest'
-                          ? Icons.person_outline_rounded
-                          : Icons.visibility_rounded,
+                  label: _sessionBadgeLabel(session),
+                  icon: _sessionBadgeIcon(session),
                 ),
               ],
             ),
@@ -637,10 +808,18 @@ class _ProfileHero extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Skill ${user.skillLevel} • ${user.preferredCity ?? 'No preferred city yet'}',
+              '${skillLevelLabel(user.skillLevel)} • ${_preferredLocationLabel(user)}',
               style: textTheme.bodyMedium?.copyWith(
                 color: Colors.white.withValues(alpha: 0.84),
                 height: 1.45,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              _sessionSummary(session),
+              style: textTheme.bodySmall?.copyWith(
+                color: Colors.white.withValues(alpha: 0.72),
+                height: 1.4,
               ),
             ),
           ],
@@ -685,6 +864,42 @@ class _HeroBadge extends StatelessWidget {
   }
 }
 
+class _CoreFieldChip extends StatelessWidget {
+  const _CoreFieldChip({
+    required this.icon,
+    required this.label,
+  });
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F7F3),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0xFFE4E8DD)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Icon(icon, size: 16, color: const Color(0xFF1E6B42)),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: const Color(0xFF1E6B42),
+                  fontWeight: FontWeight.w800,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _StatusRow extends StatelessWidget {
   const _StatusRow({
     required this.label,
@@ -714,6 +929,60 @@ class _StatusRow extends StatelessWidget {
                   color: const Color(0xFF173321),
                   fontWeight: FontWeight.w700,
                 ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SkillStatusRow extends StatelessWidget {
+  const _SkillStatusRow({
+    required this.label,
+    required this.value,
+    required this.helperText,
+  });
+
+  final String label;
+  final String value;
+  final String helperText;
+
+  @override
+  Widget build(BuildContext context) {
+    final TextTheme textTheme = Theme.of(context).textTheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            Text(
+              label,
+              style: textTheme.labelLarge?.copyWith(
+                color: const Color(0xFF627266),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                value,
+                textAlign: TextAlign.right,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: const Color(0xFF173321),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          helperText,
+          textAlign: TextAlign.right,
+          style: textTheme.bodySmall?.copyWith(
+            color: const Color(0xFF627266),
+            height: 1.35,
           ),
         ),
       ],

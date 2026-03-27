@@ -133,6 +133,16 @@ function ensureRequestMutatable(joinRequest: JoinRequestRecord): void {
   }
 }
 
+function ensureGameWithdrawable(gameStatus: GameStatus): void {
+  if (gameStatus === GameStatus.CANCELLED || gameStatus === GameStatus.COMPLETED) {
+    throw new AppError(
+      409,
+      'GAME_NOT_WITHDRAWABLE',
+      'Cancelled or completed games cannot be withdrawn from.'
+    );
+  }
+}
+
 function nextActiveGameStatus(availableSpots: number): GameStatus {
   return availableSpots > 0 ? GameStatus.OPEN : GameStatus.FULL;
 }
@@ -201,15 +211,29 @@ export async function listJoinedGames(userId: string): Promise<PaginatedResponse
 }
 
 export async function listCreatedGames(userId: string): Promise<PaginatedResponse<GameSummaryDto>> {
+  const now = new Date();
+
   const [total, games] = await prisma.$transaction([
     prisma.game.count({
       where: {
         hostId: userId,
+        startAt: {
+          gte: now,
+        },
+        status: {
+          not: GameStatus.COMPLETED,
+        },
       },
     }),
     prisma.game.findMany({
       where: {
         hostId: userId,
+        startAt: {
+          gte: now,
+        },
+        status: {
+          not: GameStatus.COMPLETED,
+        },
       },
       include: GAME_SUMMARY_INCLUDE,
       orderBy: [{ startAt: 'asc' }, { createdAt: 'asc' }],
@@ -517,6 +541,7 @@ export async function withdrawJoinRequest(
       throw new AppError(403, 'FORBIDDEN', 'Only the requester can withdraw this join request.');
     }
 
+    ensureGameWithdrawable(joinRequest.game.status);
     ensureRequestMutatable(joinRequest);
 
     const now = new Date();

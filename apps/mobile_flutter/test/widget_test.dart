@@ -1,9 +1,11 @@
 import 'package:bat_dating_app_mobile/app/app.dart';
 import 'package:bat_dating_app_mobile/app/router.dart';
+import 'package:bat_dating_app_mobile/features/create_game/presentation/create_game_page.dart';
 import 'package:bat_dating_app_mobile/features/games/application/games_providers.dart';
 import 'package:bat_dating_app_mobile/features/games/data/games_repository.dart';
 import 'package:bat_dating_app_mobile/features/profile/application/profile_providers.dart';
 import 'package:bat_dating_app_mobile/features/profile/data/profile_repository.dart';
+import 'package:bat_dating_app_mobile/features/profile/presentation/profile_page.dart';
 import 'package:bat_dating_app_mobile/shared/models/game_summary.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -61,11 +63,41 @@ class _FakeGamesRepository extends GamesRepository {
       title: 'Friday Night Ladder',
       hostNickname: 'Kevin',
     );
+    _details['game-cancelled-001'] = _buildCancelledGame(
+      id: 'game-cancelled-001',
+      title: 'Saturday Cancelled Session',
+      hostNickname: 'Kevin',
+    );
+    _details['game-withdrawn-001'] = _buildWithdrawnGame(
+      id: 'game-withdrawn-001',
+      title: 'Thursday Withdrawn Session',
+      hostNickname: 'Mina',
+    );
+    _details['game-completed-001'] = _buildCompletedGame(
+      id: 'game-completed-001',
+      title: 'Sunday Completed Session',
+      hostNickname: 'Kevin',
+    );
 
     _joinedGames.add(_details['game-joined-001']!);
     _createdGames.add(_details['game-created-001']!);
+    _createdGames.add(_details['game-cancelled-001']!);
+    _createdGames.add(_details['game-completed-001']!);
 
     _joinRequestsByGame['game-created-001'] = <JoinRequestSummary>[
+      _approvedRequest(
+        id: 'request-000',
+        gameId: 'game-created-001',
+        userId: 'user-000',
+        message: 'Already confirmed.',
+        applicant: _applicant(
+          id: 'user-000',
+          nickname: 'Carol',
+          skillLevel: 'L3',
+          preferredCity: 'Taipei City',
+          preferredDistrict: 'Songshan',
+        ),
+      ),
       _pendingRequest(
         id: 'request-001',
         gameId: 'game-created-001',
@@ -307,6 +339,10 @@ class _FakeGamesRepository extends GamesRepository {
   }
 
   bool _matchesQuery(GameSummary game, GamesFeedQuery query) {
+    if (game.status == 'CANCELLED' || game.status == 'COMPLETED') {
+      return false;
+    }
+
     if (query.city.trim().isNotEmpty &&
         !game.city.toLowerCase().contains(query.city.trim().toLowerCase())) {
       return false;
@@ -402,6 +438,8 @@ class _FakeGamesRepository extends GamesRepository {
         skillLevel: 'L4',
         preferredCity: 'Taipei City',
         preferredDistrict: 'Xinyi',
+        phoneNumber: '0912-345-678',
+        lineId: 'kevin.host',
       ),
       notes: 'Bring your own water bottle.',
       joinSummary: const GameJoinSummary(
@@ -454,6 +492,132 @@ class _FakeGamesRepository extends GamesRepository {
     );
   }
 
+  GameDetail _buildCancelledGame({
+    required String id,
+    required String title,
+    required String hostNickname,
+  }) {
+    return GameDetail(
+      id: id,
+      title: title,
+      city: 'Taipei City',
+      district: "Da'an",
+      venueName: "Da'an Sports Center",
+      venueAddress: 'No. 7, Xinsheng S. Rd.',
+      gameDate: DateTime.parse('2026-04-01'),
+      startAt: DateTime.parse('2026-04-01T19:00:00+08:00'),
+      endAt: DateTime.parse('2026-04-01T21:00:00+08:00'),
+      skillLevelMin: 'L2',
+      skillLevelMax: 'L4',
+      fee: 220,
+      capacity: 8,
+      availableSpots: 0,
+      courtCount: 2,
+      shuttleType: 'FEATHER',
+      approvalMode: 'MANUAL',
+      status: 'CANCELLED',
+      host: GameHostSummary(
+        id: 'host-$id',
+        nickname: hostNickname,
+        avatarUrl: null,
+        gender: null,
+        skillLevel: 'L3',
+        preferredCity: 'Taipei City',
+        preferredDistrict: "Da'an",
+      ),
+      notes: 'This session has been cancelled.',
+      joinSummary: const GameJoinSummary(
+        currentUserStatus: null,
+        pendingCount: 0,
+        approvedCount: 0,
+      ),
+    );
+  }
+
+  GameDetail _buildWithdrawnGame({
+    required String id,
+    required String title,
+    required String hostNickname,
+  }) {
+    return GameDetail(
+      id: id,
+      title: title,
+      city: 'Taichung City',
+      district: 'Xitun',
+      venueName: 'Taichung Sports Center',
+      venueAddress: 'No. 100, Taiwan Blvd.',
+      gameDate: DateTime.parse('2026-04-02'),
+      startAt: DateTime.parse('2026-04-02T18:30:00+08:00'),
+      endAt: DateTime.parse('2026-04-02T20:30:00+08:00'),
+      skillLevelMin: 'L2',
+      skillLevelMax: 'L4',
+      fee: 240,
+      capacity: 8,
+      availableSpots: 2,
+      courtCount: 2,
+      shuttleType: 'MIXED',
+      approvalMode: 'MANUAL',
+      status: 'CANCELLED',
+      host: GameHostSummary(
+        id: 'host-$id',
+        nickname: hostNickname,
+        avatarUrl: null,
+        gender: null,
+        skillLevel: 'L4',
+        preferredCity: 'Taichung City',
+        preferredDistrict: 'Xitun',
+      ),
+      notes: 'Your previous request has been withdrawn.',
+      joinSummary: const GameJoinSummary(
+        currentUserStatus: 'WITHDRAWN',
+        pendingCount: 0,
+        approvedCount: 0,
+      ),
+    );
+  }
+
+  GameDetail _buildCompletedGame({
+    required String id,
+    required String title,
+    required String hostNickname,
+  }) {
+    return GameDetail(
+      id: id,
+      title: title,
+      city: 'Taipei City',
+      district: 'Zhongzheng',
+      venueName: 'Zhongzheng Sports Center',
+      venueAddress: 'No. 21, Section 1, Roosevelt Rd.',
+      gameDate: DateTime.parse('2026-04-03'),
+      startAt: DateTime.parse('2026-04-03T19:30:00+08:00'),
+      endAt: DateTime.parse('2026-04-03T21:30:00+08:00'),
+      skillLevelMin: 'L2',
+      skillLevelMax: 'L4',
+      fee: 230,
+      capacity: 8,
+      availableSpots: 0,
+      courtCount: 2,
+      shuttleType: 'FEATHER',
+      approvalMode: 'MANUAL',
+      status: 'COMPLETED',
+      host: GameHostSummary(
+        id: 'host-$id',
+        nickname: hostNickname,
+        avatarUrl: null,
+        gender: null,
+        skillLevel: 'L4',
+        preferredCity: 'Taipei City',
+        preferredDistrict: 'Zhongzheng',
+      ),
+      notes: 'This session has already been completed.',
+      joinSummary: const GameJoinSummary(
+        currentUserStatus: null,
+        pendingCount: 0,
+        approvedCount: 0,
+      ),
+    );
+  }
+
   JoinRequestSummary _pendingRequest({
     required String id,
     required String gameId,
@@ -472,6 +636,28 @@ class _FakeGamesRepository extends GamesRepository {
       rejectedReason: null,
       createdAt: DateTime.parse('2026-03-21T11:00:00+08:00'),
       updatedAt: DateTime.parse('2026-03-21T11:00:00+08:00'),
+      applicant: applicant,
+    );
+  }
+
+  JoinRequestSummary _approvedRequest({
+    required String id,
+    required String gameId,
+    required String userId,
+    required String message,
+    required JoinRequestApplicant applicant,
+  }) {
+    return JoinRequestSummary(
+      id: id,
+      gameId: gameId,
+      userId: userId,
+      status: 'APPROVED',
+      message: message,
+      respondedAt: DateTime.parse('2026-03-21T10:30:00+08:00'),
+      approvedAt: DateTime.parse('2026-03-21T10:30:00+08:00'),
+      rejectedReason: null,
+      createdAt: DateTime.parse('2026-03-21T10:00:00+08:00'),
+      updatedAt: DateTime.parse('2026-03-21T10:30:00+08:00'),
       applicant: applicant,
     );
   }
@@ -678,6 +864,12 @@ Finder _verticalScrollableFinder() {
       .last;
 }
 
+Finder _createTextFieldByLabel(String labelText) {
+  return find.byWidgetPredicate((Widget widget) {
+    return widget is TextField && widget.decoration?.labelText == labelText;
+  });
+}
+
 ProfileSession _authenticatedSession() {
   return ProfileSession.authenticated(
     const ProfileUser(
@@ -709,6 +901,62 @@ Widget _buildTestApp({
   );
 }
 
+Widget _buildProfilePageTestApp({
+  ProfileSession? session,
+}) {
+  final ProfileSession resolvedSession = session ?? _authenticatedSession();
+
+  return ProviderScope(
+    overrides: <Override>[
+      gamesRepositoryProvider.overrideWithValue(_FakeGamesRepository()),
+      profileSessionProvider.overrideWith(
+        (Ref ref) async => resolvedSession,
+      ),
+    ],
+    child: MediaQuery(
+      data: const MediaQueryData(
+        size: Size(1440, 2800),
+        devicePixelRatio: 1,
+      ),
+      child: const MaterialApp(
+        home: ProfilePage(),
+      ),
+    ),
+  );
+}
+
+Widget _buildCreatePageTestApp({
+  ProfileSession? session,
+}) {
+  final ProfileSession resolvedSession = session ?? _authenticatedSession();
+
+  return ProviderScope(
+    overrides: <Override>[
+      gamesRepositoryProvider.overrideWithValue(_FakeGamesRepository()),
+      profileSessionProvider.overrideWith(
+        (Ref ref) async => resolvedSession,
+      ),
+    ],
+    child: MediaQuery(
+      data: const MediaQueryData(
+        size: Size(1440, 10000),
+        devicePixelRatio: 1,
+      ),
+      child: const MaterialApp(
+        home: CreateGamePage(),
+      ),
+    ),
+  );
+}
+
+Future<void> _openGameRequestsPage(
+  WidgetTester tester,
+  String gameId,
+) async {
+  appRouter.go('/my-games/$gameId/requests');
+  await tester.pumpAndSettle();
+}
+
 void main() {
   testWidgets('games discovery renders API data', (WidgetTester tester) async {
     await tester.pumpWidget(_buildTestApp());
@@ -720,7 +968,7 @@ void main() {
       scrollable: _verticalScrollableFinder(),
     );
 
-    expect(find.text('Open matches'), findsOneWidget);
+    expect(find.text('開放中的球局'), findsOneWidget);
     expect(find.text('Wednesday Doubles'), findsOneWidget);
     expect(find.text("Taipei City · Da'an"), findsOneWidget);
     expect(find.text('Banqiao Rally'), findsOneWidget);
@@ -772,7 +1020,7 @@ void main() {
 
     expect(find.text('Friday Packed Session'), findsNothing);
     expect(find.text('Wednesday Doubles'), findsNothing);
-    expect(find.text('Nothing live right now'), findsOneWidget);
+    expect(find.text('目前沒有即時開放的球局'), findsOneWidget);
   });
 
   testWidgets('game detail join action updates state',
@@ -788,7 +1036,7 @@ void main() {
     await tester.tap(find.text('Wednesday Doubles'));
     await tester.pumpAndSettle();
 
-    final Finder joinButton = find.widgetWithText(FilledButton, 'Join game');
+    final Finder joinButton = find.widgetWithText(FilledButton, '直接加入');
     await tester.scrollUntilVisible(
       joinButton,
       400,
@@ -799,7 +1047,78 @@ void main() {
     await tester.tap(joinButton);
     await tester.pumpAndSettle();
 
-    expect(find.text('Joined successfully.'), findsOneWidget);
+    expect(find.text('已成功加入。'), findsOneWidget);
+  });
+
+  testWidgets('profile register requires at least one contact field',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(_buildProfilePageTestApp());
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.byType(ToggleButtons),
+      400,
+      scrollable: _verticalScrollableFinder(),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('註冊').first);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byType(TextFormField).at(0),
+      '',
+    );
+    await tester.enterText(
+      find.byType(TextFormField).at(1),
+      '',
+    );
+    await tester.enterText(
+      find.byType(TextFormField).at(2),
+      'password123',
+    );
+    await tester.pumpAndSettle();
+
+    final Finder registerButton = find.widgetWithText(FilledButton, '建立帳號');
+    await tester.ensureVisible(registerButton);
+    await tester.pumpAndSettle();
+    await tester.tap(registerButton);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Email 或手機至少填一項，才能建立帳號。'),
+      findsWidgets,
+    );
+  });
+
+  testWidgets('create validation blocks invalid numeric input',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(_buildCreatePageTestApp());
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('費用'),
+      400,
+      scrollable: _verticalScrollableFinder(),
+    );
+    await tester.pumpAndSettle();
+
+    final Finder feeField = _createTextFieldByLabel('費用');
+    expect(feeField, findsOneWidget);
+
+    await tester.enterText(feeField, 'abc');
+    await tester.pumpAndSettle();
+
+    final Finder createButton = find.widgetWithText(FilledButton, '建立球局');
+    await tester.ensureVisible(createButton);
+    await tester.pumpAndSettle();
+    await tester.tap(createButton);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('費用、容量與場地數必須是有效數字。'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('my games renders joined and created data',
@@ -807,18 +1126,65 @@ void main() {
     await tester.pumpWidget(_buildTestApp());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(NavigationDestination, 'My Games'));
+    await tester.tap(find.widgetWithText(NavigationDestination, '我的球局'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Joined games'), findsOneWidget);
-    expect(find.text('Created games'), findsNothing);
+    expect(find.text('已加入清單'), findsOneWidget);
+    expect(find.text('我建立的清單'), findsNothing);
 
-    await tester.tap(find.widgetWithText(Tab, 'Created'));
+    await tester.tap(find.widgetWithText(Tab, '我建立的'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Created games'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Friday Night Ladder'),
+      400,
+      scrollable: _verticalScrollableFinder(),
+    );
+
     expect(find.text('Friday Night Ladder'), findsOneWidget);
-    expect(find.text('Manage requests'), findsOneWidget);
+    expect(find.text('管理申請'), findsOneWidget);
+  });
+
+  testWidgets('my games shows cancelled games consistently',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(_buildTestApp());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(NavigationDestination, '我的球局'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(Tab, '我建立的'));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('Saturday Cancelled Session'),
+      400,
+      scrollable: _verticalScrollableFinder(),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Saturday Cancelled Session'), findsOneWidget);
+    expect(find.text('已取消'), findsWidgets);
+  });
+
+  testWidgets('my games shows completed games consistently',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(_buildTestApp());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(NavigationDestination, '我的球局'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(Tab, '我建立的'));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('Sunday Completed Session'),
+      400,
+      scrollable: _verticalScrollableFinder(),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sunday Completed Session'), findsOneWidget);
+    expect(find.text('已結束'), findsWidgets);
   });
 
   testWidgets('host can review join requests from created games',
@@ -826,41 +1192,44 @@ void main() {
     await tester.pumpWidget(_buildTestApp());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(NavigationDestination, 'My Games'));
+    await tester.tap(find.widgetWithText(NavigationDestination, '我的球局'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(Tab, 'Created'));
-    await tester.pumpAndSettle();
-    final Finder manageRequests =
-        find.widgetWithText(TextButton, 'Manage requests');
-    await tester.scrollUntilVisible(
-      manageRequests,
-      400,
-      scrollable: _verticalScrollableFinder(),
-    );
-    await tester.ensureVisible(manageRequests);
-    await tester.pumpAndSettle();
-    await tester.tap(manageRequests);
+    await tester.tap(find.widgetWithText(Tab, '我建立的'));
     await tester.pumpAndSettle();
 
+    await _openGameRequestsPage(tester, 'game-created-001');
+
     await tester.scrollUntilVisible(
-      find.text('Ava'),
+      find.text('Carol'),
       400,
       scrollable: _verticalScrollableFinder(),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Ava'), findsOneWidget);
-    expect(find.widgetWithText(FilledButton, 'Approve'), findsNWidgets(2));
+    expect(find.text('Carol'), findsOneWidget);
+    expect(find.text('參加名單'), findsOneWidget);
 
-    final Finder approveButton =
-        find.widgetWithText(FilledButton, 'Approve').first;
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey<String>('join-request-request-001')),
+      400,
+      scrollable: _verticalScrollableFinder(),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('join-request-request-001')),
+      findsOneWidget,
+    );
+    expect(find.widgetWithText(FilledButton, '接受'), findsNWidgets(2));
+
+    final Finder approveButton = find.widgetWithText(FilledButton, '接受').first;
     await tester.ensureVisible(approveButton);
     await tester.pumpAndSettle();
     await tester.tap(approveButton);
     await tester.pumpAndSettle();
 
-    expect(find.text('Request approved.'), findsOneWidget);
-    expect(find.text('Manage requests'), findsNothing);
+    expect(find.text('申請已接受。'), findsOneWidget);
+    expect(find.text('管理申請'), findsNothing);
   });
 
   testWidgets('host can reject join requests from created games',
@@ -868,21 +1237,12 @@ void main() {
     await tester.pumpWidget(_buildTestApp());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(NavigationDestination, 'My Games'));
+    await tester.tap(find.widgetWithText(NavigationDestination, '我的球局'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(Tab, 'Created'));
+    await tester.tap(find.widgetWithText(Tab, '我建立的'));
     await tester.pumpAndSettle();
-    final Finder manageRequests =
-        find.widgetWithText(TextButton, 'Manage requests');
-    await tester.scrollUntilVisible(
-      manageRequests,
-      400,
-      scrollable: _verticalScrollableFinder(),
-    );
-    await tester.ensureVisible(manageRequests);
-    await tester.pumpAndSettle();
-    await tester.tap(manageRequests);
-    await tester.pumpAndSettle();
+
+    await _openGameRequestsPage(tester, 'game-created-001');
 
     await tester.scrollUntilVisible(
       find.text('Ava'),
@@ -891,14 +1251,37 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final Finder rejectButton =
-        find.widgetWithText(OutlinedButton, 'Reject').first;
+    final Finder rejectButton = find.widgetWithText(OutlinedButton, '拒絕').first;
     await tester.ensureVisible(rejectButton);
     await tester.pumpAndSettle();
     await tester.tap(rejectButton);
     await tester.pumpAndSettle();
 
-    expect(find.text('Request rejected.'), findsOneWidget);
+    expect(find.text('申請已拒絕。'), findsOneWidget);
+  });
+
+  testWidgets('approved game detail keeps contact handoff and status visible',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(_buildTestApp());
+    await tester.pumpAndSettle();
+
+    appRouter.go('/games/game-joined-001');
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('已核准，主揪聯絡方式已解鎖'),
+      400,
+      scrollable: _verticalScrollableFinder(),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('已核准，主揪聯絡方式已解鎖'), findsOneWidget);
+    expect(find.text('你已被核准加入這場球局，現在可以查看主揪的電話與 LINE ID。'),
+        findsOneWidget);
+    expect(find.text('電話'), findsOneWidget);
+    expect(find.text('LINE ID'), findsOneWidget);
+    expect(find.text('0912-345-678'), findsOneWidget);
+    expect(find.text('kevin.host'), findsOneWidget);
   });
 
   testWidgets('guest sees sign-in gate on create page',
@@ -908,11 +1291,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(NavigationDestination, 'Create'));
+    await tester.tap(find.widgetWithText(NavigationDestination, '開團'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Host tools are locked for guests'), findsOneWidget);
-    expect(find.text('Go to profile'), findsOneWidget);
+    expect(find.text('訪客無法使用主揪工具'), findsOneWidget);
+    expect(find.text('前往登入 / 註冊'), findsOneWidget);
   });
 
   testWidgets('guest sees sign-in gate on my games page',
@@ -922,11 +1305,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(NavigationDestination, 'My Games'));
+    await tester.tap(find.widgetWithText(NavigationDestination, '我的球局'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Your schedule is available after sign-in'),
-        findsOneWidget);
+    expect(find.text('登入後才會顯示你的行程'), findsOneWidget);
   });
 
   testWidgets('guest sees sign-in gate on game detail join section',
@@ -940,12 +1322,130 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.dragUntilVisible(
-      find.text('Join actions are locked for guests'),
+      find.text('訪客無法使用報名功能'),
       find.byType(Scrollable).last,
       const Offset(0, -300),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Sign in to join'), findsOneWidget);
+    expect(find.text('登入後加入'), findsOneWidget);
+  });
+
+  testWidgets('withdrawn game detail shows withdrawn status',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(_buildTestApp());
+    await tester.pumpAndSettle();
+
+    appRouter.go('/games/game-withdrawn-001');
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('你目前的狀態：已撤回'),
+      400,
+      scrollable: _verticalScrollableFinder(),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('你目前的狀態：已撤回'), findsOneWidget);
+    expect(find.text('這場球局已取消，無法再報名。'), findsOneWidget);
+  });
+
+  testWidgets('completed game detail shows completed status',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(_buildTestApp());
+    await tester.pumpAndSettle();
+
+    appRouter.go('/games/game-completed-001');
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('這場球局已結束，無法再報名。'),
+      400,
+      scrollable: _verticalScrollableFinder(),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('這場球局已結束'), findsWidgets);
+    expect(find.text('這場球局已結束，無法再報名。'), findsOneWidget);
+    expect(find.text('這場球局已結束，已不能再加入。'), findsOneWidget);
+  });
+
+  testWidgets('demo preview guest path keeps browse-only review working',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(
+      _buildTestApp(session: ProfileSession.guest()),
+    );
+    await tester.pumpAndSettle();
+
+    appRouter.go('/games/game-open-001');
+    await tester.pumpAndSettle();
+
+    expect(find.text('球局詳情'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('訪客無法使用報名功能'),
+      400,
+      scrollable: _verticalScrollableFinder(),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('球局詳情'), findsOneWidget);
+    expect(find.text('訪客無法使用報名功能'), findsOneWidget);
+    expect(find.text('登入後加入'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(NavigationDestination, '開團'));
+    await tester.pumpAndSettle();
+    expect(find.text('訪客無法使用主揪工具'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(NavigationDestination, '我的球局'));
+    await tester.pumpAndSettle();
+    expect(find.text('登入後才會顯示你的行程'), findsOneWidget);
+  });
+
+  testWidgets('demo preview host path keeps review and contact handoff working',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(_buildTestApp());
+    await tester.pumpAndSettle();
+
+    appRouter.go('/my-games/game-created-001/requests');
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('Carol'),
+      400,
+      scrollable: _verticalScrollableFinder(),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('參加名單'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('pending-requests-card')),
+      findsOneWidget,
+    );
+
+    await tester.scrollUntilVisible(
+      find.text('Ava'),
+      400,
+      scrollable: _verticalScrollableFinder(),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ava'), findsOneWidget);
+
+    appRouter.go('/games/game-joined-001');
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('已核准，主揪聯絡方式已解鎖'),
+      400,
+      scrollable: _verticalScrollableFinder(),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('已核准，主揪聯絡方式已解鎖'), findsOneWidget);
+    expect(find.text('電話'), findsOneWidget);
+    expect(find.text('LINE ID'), findsOneWidget);
+    expect(find.text('0912-345-678'), findsOneWidget);
+    expect(find.text('kevin.host'), findsOneWidget);
   });
 }

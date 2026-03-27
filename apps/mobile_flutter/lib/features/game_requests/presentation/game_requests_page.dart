@@ -8,6 +8,8 @@ import '../../../shared/models/game_summary.dart';
 import '../../../shared/widgets/async_state_view.dart';
 import '../../../shared/widgets/auth_required_card.dart';
 import '../../../shared/widgets/section_card.dart';
+import '../../../shared/widgets/status_callout.dart';
+import '../../../shared/widgets/user_avatar.dart';
 import '../../games/application/games_providers.dart';
 import '../../games/data/games_repository.dart';
 import '../../my_games/application/my_games_providers.dart';
@@ -44,12 +46,12 @@ class _GameRequestsPageState extends ConsumerState<GameRequestsPage> {
 
     if (sessionAsync.hasError) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Join Requests')),
+        appBar: AppBar(title: const Text('報名申請')),
         body: Padding(
           padding: const EdgeInsets.all(20),
           child: SectionCard(
-            title: 'Join Requests',
-            subtitle: 'Could not load your account state.',
+            title: '報名申請',
+            subtitle: '無法載入你的帳號狀態。',
             child: Text(sessionAsync.error.toString()),
           ),
         ),
@@ -59,13 +61,12 @@ class _GameRequestsPageState extends ConsumerState<GameRequestsPage> {
     final ProfileSession session = sessionAsync.requireValue;
     if (!session.hasServerIdentity) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Join Requests')),
+        appBar: AppBar(title: const Text('報名申請')),
         body: Padding(
           padding: const EdgeInsets.all(20),
           child: AuthRequiredCard(
-            title: 'Host moderation is locked for guests',
-            message:
-                'Sign in before reviewing or managing join requests for a game.',
+            title: '訪客無法使用主揪審核',
+            message: '請先登入，再查看或管理這場球局的報名申請。',
             onSignInPressed: () => context.go(AppRoutePaths.profile),
           ),
         ),
@@ -78,7 +79,7 @@ class _GameRequestsPageState extends ConsumerState<GameRequestsPage> {
         ref.watch(gameJoinRequestsProvider(widget.gameId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Join Requests')),
+      appBar: AppBar(title: const Text('報名申請')),
       body: AsyncStateView(
         isLoading: detailAsync.isLoading || requestsAsync.isLoading,
         errorMessage: detailAsync.hasError
@@ -90,24 +91,21 @@ class _GameRequestsPageState extends ConsumerState<GameRequestsPage> {
           data: (GameDetail detail) {
             return requestsAsync.maybeWhen(
               data: (List<JoinRequestSummary> requests) {
-                final int pendingCount = requests
-                    .where(
-                      (JoinRequestSummary request) =>
-                          request.status == 'PENDING',
-                    )
-                    .length;
-                final int approvedCount = requests
-                    .where(
-                      (JoinRequestSummary request) =>
-                          request.status == 'APPROVED',
-                    )
-                    .length;
-                final int rejectedCount = requests
-                    .where(
-                      (JoinRequestSummary request) =>
-                          request.status == 'REJECTED',
-                    )
-                    .length;
+                final List<JoinRequestSummary> pendingRequests =
+                    requests.where((JoinRequestSummary request) {
+                  return request.isPending;
+                }).toList(growable: false);
+                final List<JoinRequestSummary> approvedRequests =
+                    requests.where((JoinRequestSummary request) {
+                  return request.isApproved;
+                }).toList(growable: false);
+                final List<JoinRequestSummary> historyRequests =
+                    requests.where((JoinRequestSummary request) {
+                  return request.isRejected || request.isWithdrawn;
+                }).toList(growable: false);
+                final int pendingCount = pendingRequests.length;
+                final int approvedCount = approvedRequests.length;
+                final int historyCount = historyRequests.length;
 
                 return RefreshIndicator(
                   onRefresh: _refresh,
@@ -119,52 +117,138 @@ class _GameRequestsPageState extends ConsumerState<GameRequestsPage> {
                         detail: detail,
                         pendingCount: pendingCount,
                         approvedCount: approvedCount,
-                        rejectedCount: rejectedCount,
+                        historyCount: historyCount,
                         totalCount: requests.length,
                       ),
                       const SizedBox(height: 16),
-                      SectionCard(
-                        title: 'Host actions',
-                        subtitle: 'Make quick updates or cancel the game.',
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                      StatusCallout(
+                        title: '主揪工作台',
+                        message:
+                            '先處理待審核申請，再看參加名單，最後回看處理紀錄。已接受的球友才會進入名單，也才會被視為可聯絡對象。',
+                        icon: Icons.manage_accounts_rounded,
+                        tone: StatusCalloutTone.info,
+                      ),
+                      const SizedBox(height: 12),
+                      StatusCallout(
+                        title: '名單摘要',
+                        message:
+                            '已接受 ${approvedRequests.length} 位球友，待審核 ${pendingRequests.length} 位球友。',
+                        icon: Icons.groups_rounded,
+                        tone: StatusCalloutTone.success,
+                        trailing: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
                           children: <Widget>[
-                            Text(
-                              'You can update the title, fee, capacity, and notes without leaving this page.',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                    color: const Color(0xFF55655B),
-                                    height: 1.45,
-                                  ),
+                            const _NameChip(
+                              label: '參加名單',
+                              accent: Color(0xFF1E6B42),
                             ),
-                            const SizedBox(height: 14),
-                            Row(
-                              children: <Widget>[
-                                Expanded(
-                                  child: FilledButton.icon(
-                                    onPressed: _busyGameAction == null
-                                        ? () => _handleEditGame(detail)
-                                        : null,
-                                    icon: const Icon(Icons.edit_rounded),
-                                    label: const Text('Edit game'),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: OutlinedButton.icon(
-                                    onPressed: _busyGameAction == null
-                                        ? () => _handleCancelGame(detail)
-                                        : null,
-                                    icon: const Icon(Icons.cancel_rounded),
-                                    label: const Text('Cancel game'),
-                                  ),
-                                ),
-                              ],
+                            const _NameChip(
+                              label: '報名申請',
+                              accent: Color(0xFFDA8A18),
+                            ),
+                            ...approvedRequests.map(
+                              (JoinRequestSummary request) => _NameChip(
+                                label: request.applicant?.nickname ??
+                                    '使用者 ${_shortId(request.userId)}',
+                                accent: const Color(0xFF1E6B42),
+                              ),
+                            ),
+                            ...pendingRequests.map(
+                              (JoinRequestSummary request) => _NameChip(
+                                label: request.applicant?.nickname ??
+                                    '使用者 ${_shortId(request.userId)}',
+                                accent: Colors.orange,
+                              ),
+                            ),
+                            _CountChip(
+                              label: '已接受',
+                              value: approvedRequests.length,
+                              accent: const Color(0xFF1E6B42),
+                            ),
+                            _CountChip(
+                              label: '待審核',
+                              value: pendingRequests.length,
+                              accent: Colors.orange,
                             ),
                           ],
                         ),
+                      ),
+                      const SizedBox(height: 16),
+                      _RequestGroupCard(
+                        key: const ValueKey<String>('pending-requests-card'),
+                        title: '報名申請',
+                        subtitle: pendingRequests.isEmpty
+                            ? '目前沒有待處理的申請。'
+                            : '先處理這一區，再看已接受名單與歷史紀錄。',
+                        emptyTitle: '目前沒有待審核申請',
+                        emptyMessage: '新申請進來時，會先出現在這裡。',
+                        emptyIcon: Icons.inbox_rounded,
+                        emptyTone: StatusCalloutTone.neutral,
+                        requests: pendingRequests,
+                        showActions: true,
+                        busyRequestId: _busyJoinRequestId,
+                        onApprove: _handleApprove,
+                        onReject: _handleReject,
+                      ),
+                      const SizedBox(height: 16),
+                      SectionCard(
+                        title: '參加名單',
+                        subtitle: approvedRequests.isEmpty
+                            ? '目前還沒有已接受的球友。'
+                            : '已接受、且名額已保留的球友會留在這裡。',
+                        child: approvedRequests.isEmpty
+                            ? const StatusCallout(
+                                title: '參加名單尚未建立',
+                                message: '接受一筆申請後，這裡就會開始累積已接受的球友。',
+                                icon: Icons.groups_rounded,
+                                tone: StatusCalloutTone.neutral,
+                              )
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: approvedRequests.isNotEmpty
+                                    ? <Widget>[
+                                        StatusCallout(
+                                          title: '已接受名單摘要',
+                                          message: _requestNamesSummary(
+                                              approvedRequests),
+                                          icon: Icons.verified_rounded,
+                                          tone: StatusCalloutTone.success,
+                                        ),
+                                        const SizedBox(height: 12),
+                                        ...approvedRequests.map(
+                                          (JoinRequestSummary request) =>
+                                              Padding(
+                                            padding: const EdgeInsets.only(
+                                                bottom: 12),
+                                            child: _ParticipantTile(
+                                              request: request,
+                                            ),
+                                          ),
+                                        ),
+                                      ]
+                                    : <Widget>[],
+                              ),
+                      ),
+                      if (historyRequests.isNotEmpty) ...<Widget>[
+                        const SizedBox(height: 16),
+                        _RequestGroupCard(
+                          title: '處理紀錄',
+                          subtitle: '已拒絕、已撤回與已取消的申請，會保留在這裡供回看。',
+                          emptyTitle: '處理紀錄已清空',
+                          emptyMessage: '等到有人撤回或被拒絕，這裡才會累積紀錄。',
+                          emptyIcon: Icons.history_rounded,
+                          emptyTone: StatusCalloutTone.neutral,
+                          requests: historyRequests,
+                          showActions: false,
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                      _HostActionCard(
+                        detail: detail,
+                        isBusy: _busyGameAction != null,
+                        onEdit: () => _handleEditGame(detail),
+                        onCancel: () => _handleCancelGame(detail),
                       ),
                       const SizedBox(height: 16),
                       SectionCard(
@@ -180,64 +264,45 @@ class _GameRequestsPageState extends ConsumerState<GameRequestsPage> {
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              'Available spots: ${detail.availableSpots}/${detail.capacity}',
+                              '剩餘名額：${detail.availableSpots}/${detail.capacity}',
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              '目前名單：$approvedCount/${detail.capacity}',
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 16),
                       SectionCard(
-                        title: 'Moderation summary',
-                        subtitle: 'Fast scan for host decisions',
+                        title: '審核摘要',
+                        subtitle: '快速查看待審核、已接受與處理紀錄的分布。',
                         child: Wrap(
                           spacing: 10,
                           runSpacing: 10,
                           children: <Widget>[
                             _CountChip(
-                              label: 'Pending',
+                              label: '待審核',
                               value: pendingCount,
                               accent: Colors.orange,
                             ),
                             _CountChip(
-                              label: 'Approved',
+                              label: '已接受',
                               value: approvedCount,
                               accent: Colors.green,
                             ),
                             _CountChip(
-                              label: 'Rejected',
-                              value: rejectedCount,
+                              label: '已處理',
+                              value: historyCount,
                               accent: Colors.red,
                             ),
                             _CountChip(
-                              label: 'Total',
+                              label: '總數',
                               value: requests.length,
                               accent: Theme.of(context).colorScheme.primary,
                             ),
                           ],
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      SectionCard(
-                        title: 'Host requests',
-                        subtitle: requests.isEmpty
-                            ? 'No join requests yet.'
-                            : 'Review and moderate pending requests.',
-                        child: requests.isEmpty
-                            ? const Text('New requests will appear here.')
-                            : Column(
-                                children:
-                                    requests.map((JoinRequestSummary request) {
-                                  return Padding(
-                                    padding: const EdgeInsets.only(bottom: 12),
-                                    child: _JoinRequestTile(
-                                      request: request,
-                                      isBusy: _busyJoinRequestId == request.id,
-                                      onApprove: () => _handleApprove(request),
-                                      onReject: () => _handleReject(request),
-                                    ),
-                                  );
-                                }).toList(growable: false),
-                              ),
                       ),
                     ],
                   ),
@@ -265,7 +330,7 @@ class _GameRequestsPageState extends ConsumerState<GameRequestsPage> {
     await _runAction(
       request,
       () => ref.read(gamesRepositoryProvider).approveJoinRequest(request.id),
-      successMessage: 'Request approved.',
+      successMessage: '申請已接受。',
     );
   }
 
@@ -273,7 +338,7 @@ class _GameRequestsPageState extends ConsumerState<GameRequestsPage> {
     await _runAction(
       request,
       () => ref.read(gamesRepositoryProvider).rejectJoinRequest(request.id),
-      successMessage: 'Request rejected.',
+      successMessage: '申請已拒絕。',
     );
   }
 
@@ -291,32 +356,32 @@ class _GameRequestsPageState extends ConsumerState<GameRequestsPage> {
             TextEditingController(text: detail.notes ?? '');
 
         return AlertDialog(
-          title: const Text('Edit game'),
+          title: const Text('編輯球局'),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 TextField(
                   controller: titleController,
-                  decoration: const InputDecoration(labelText: 'Title'),
+                  decoration: const InputDecoration(labelText: '球局名稱'),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: feeController,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Fee'),
+                  decoration: const InputDecoration(labelText: '費用'),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: capacityController,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Capacity'),
+                  decoration: const InputDecoration(labelText: '容量'),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: notesController,
                   maxLines: 4,
-                  decoration: const InputDecoration(labelText: 'Notes'),
+                  decoration: const InputDecoration(labelText: '備註'),
                 ),
               ],
             ),
@@ -324,7 +389,7 @@ class _GameRequestsPageState extends ConsumerState<GameRequestsPage> {
           actions: <Widget>[
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cancel'),
+              child: const Text('取消'),
             ),
             FilledButton(
               onPressed: () {
@@ -350,7 +415,7 @@ class _GameRequestsPageState extends ConsumerState<GameRequestsPage> {
                   ),
                 );
               },
-              child: const Text('Save'),
+              child: const Text('儲存'),
             ),
           ],
         );
@@ -379,7 +444,7 @@ class _GameRequestsPageState extends ConsumerState<GameRequestsPage> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Game updated.')),
+        const SnackBar(content: Text('球局已更新。')),
       );
     } on DioException catch (error) {
       if (!mounted) {
@@ -389,9 +454,7 @@ class _GameRequestsPageState extends ConsumerState<GameRequestsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            error.response?.data?.toString() ??
-                error.message ??
-                'Update failed.',
+            error.response?.data?.toString() ?? error.message ?? '更新失敗。',
           ),
         ),
       );
@@ -415,18 +478,18 @@ class _GameRequestsPageState extends ConsumerState<GameRequestsPage> {
           context: context,
           builder: (BuildContext dialogContext) {
             return AlertDialog(
-              title: const Text('Cancel game?'),
+              title: const Text('取消球局？'),
               content: Text(
-                'This will close the game and mark all active requests as cancelled.',
+                '這會關閉球局，並把所有進行中的申請標記為已取消。',
               ),
               actions: <Widget>[
                 TextButton(
                   onPressed: () => Navigator.of(dialogContext).pop(false),
-                  child: const Text('Keep it open'),
+                  child: const Text('先不取消'),
                 ),
                 FilledButton.tonal(
                   onPressed: () => Navigator.of(dialogContext).pop(true),
-                  child: const Text('Cancel game'),
+                  child: const Text('取消球局'),
                 ),
               ],
             );
@@ -453,7 +516,7 @@ class _GameRequestsPageState extends ConsumerState<GameRequestsPage> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${detail.title} was cancelled.')),
+        SnackBar(content: Text('${detail.title} 已取消。')),
       );
     } on DioException catch (error) {
       if (!mounted) {
@@ -463,9 +526,7 @@ class _GameRequestsPageState extends ConsumerState<GameRequestsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            error.response?.data?.toString() ??
-                error.message ??
-                'Cancel failed.',
+            error.response?.data?.toString() ?? error.message ?? '取消失敗。',
           ),
         ),
       );
@@ -503,9 +564,7 @@ class _GameRequestsPageState extends ConsumerState<GameRequestsPage> {
       messenger.showSnackBar(
         SnackBar(
           content: Text(
-            error.response?.data?.toString() ??
-                error.message ??
-                'Action failed.',
+            error.response?.data?.toString() ?? error.message ?? '操作失敗。',
           ),
         ),
       );
@@ -592,6 +651,7 @@ class _CountChip extends StatelessWidget {
 
 class _JoinRequestTile extends StatelessWidget {
   const _JoinRequestTile({
+    super.key,
     required this.request,
     required this.isBusy,
     required this.onApprove,
@@ -616,24 +676,16 @@ class _JoinRequestTile extends StatelessWidget {
       _ => Colors.blueGrey,
     };
     final String displayName =
-        request.applicant?.nickname ?? 'User ${_shortId(request.userId)}';
-    final String? applicantNickname = request.applicant?.nickname;
+        request.applicant?.nickname ?? '使用者 ${_shortId(request.userId)}';
     final String detailLine = request.applicant == null
-        ? 'User ${_shortId(request.userId)}'
+        ? '使用者 ${_shortId(request.userId)}'
         : [
-            request.applicant!.skillLevel,
+            _skillLevelDisplayLabel(request.applicant!.skillLevel),
             if (request.applicant!.preferredCity != null)
               request.applicant!.preferredCity!,
             if (request.applicant!.preferredDistrict != null)
               request.applicant!.preferredDistrict!,
           ].join(' · ');
-    final String initial =
-        applicantNickname != null && applicantNickname.isNotEmpty
-            ? applicantNickname.substring(0, 1).toUpperCase()
-            : (request.userId.isNotEmpty
-                ? request.userId.substring(0, 1).toUpperCase()
-                : '?');
-
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -663,16 +715,12 @@ class _JoinRequestTile extends StatelessWidget {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    CircleAvatar(
+                    UserAvatar(
+                      name: displayName,
+                      avatarUrl: request.applicant?.avatarUrl,
                       radius: 20,
                       backgroundColor: statusColor.withValues(alpha: 0.12),
-                      child: Text(
-                        initial,
-                        style: TextStyle(
-                          color: statusColor,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
+                      foregroundColor: statusColor,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -680,7 +728,7 @@ class _JoinRequestTile extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Text(
-                            'Request ${_shortId(request.id)}',
+                            '申請 ${_shortId(request.id)}',
                             style: textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w900,
                               color: const Color(0xFF173321),
@@ -688,7 +736,7 @@ class _JoinRequestTile extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            displayName,
+                            '申請人',
                             style: textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.w600,
                               color: const Color(0xFF55655B),
@@ -697,7 +745,10 @@ class _JoinRequestTile extends StatelessWidget {
                         ],
                       ),
                     ),
-                    _StatusBadge(label: request.status, accent: statusColor),
+                    _StatusBadge(
+                      label: _requestStatusLabel(request.status),
+                      accent: statusColor,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -734,7 +785,7 @@ class _JoinRequestTile extends StatelessWidget {
                   children: <Widget>[
                     _InfoPill(
                       icon: Icons.schedule_rounded,
-                      label: 'Requested ${_formatDateTime(request.createdAt)}',
+                      label: '申請於 ${_formatDateTime(request.createdAt)}',
                     ),
                     if (request.applicant?.gender != null)
                       _InfoPill(
@@ -744,31 +795,38 @@ class _JoinRequestTile extends StatelessWidget {
                     if (request.applicant?.skillLevel != null)
                       _InfoPill(
                         icon: Icons.sports_tennis_rounded,
-                        label: request.applicant!.skillLevel,
+                        label: _skillLevelDisplayLabel(
+                            request.applicant!.skillLevel),
                       ),
                     if (request.respondedAt != null)
                       _InfoPill(
                         icon: Icons.history_rounded,
-                        label:
-                            'Responded ${_formatDateTime(request.respondedAt!)}',
+                        label: '回覆於 ${_formatDateTime(request.respondedAt!)}',
                       ),
                   ],
                 ),
                 if (isPending) ...<Widget>[
+                  const SizedBox(height: 14),
+                  const StatusCallout(
+                    title: '待審核申請',
+                    message: '這位球友目前還沒進入名單；接受後才會算入參加人數，也才會進入聯絡 handoff 範圍。',
+                    icon: Icons.hourglass_top_rounded,
+                    tone: StatusCalloutTone.warning,
+                  ),
                   const SizedBox(height: 14),
                   Row(
                     children: <Widget>[
                       Expanded(
                         child: FilledButton(
                           onPressed: isBusy ? null : onApprove,
-                          child: const Text('Approve'),
+                          child: const Text('接受'),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: OutlinedButton(
                           onPressed: isBusy ? null : onReject,
-                          child: const Text('Reject'),
+                          child: const Text('拒絕'),
                         ),
                       ),
                     ],
@@ -781,17 +839,130 @@ class _JoinRequestTile extends StatelessWidget {
       ),
     );
   }
+}
 
-  String _shortId(String value) {
-    return value.length <= 8 ? value : value.substring(0, 8);
-  }
+class _ParticipantTile extends StatelessWidget {
+  const _ParticipantTile({
+    required this.request,
+  });
 
-  String _formatDateTime(DateTime dateTime) {
-    final String date =
-        '${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')}';
-    final String time =
-        '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
-    return '$date $time';
+  final JoinRequestSummary request;
+
+  @override
+  Widget build(BuildContext context) {
+    final TextTheme textTheme = Theme.of(context).textTheme;
+    final JoinRequestApplicant? applicant = request.applicant;
+    final String displayName =
+        applicant?.nickname ?? '使用者 ${_shortId(request.userId)}';
+    final String detailLine = applicant == null
+        ? '使用者 ${_shortId(request.userId)}'
+        : [
+            _skillLevelDisplayLabel(applicant.skillLevel),
+            if (applicant.preferredCity != null) applicant.preferredCity!,
+            if (applicant.preferredDistrict != null)
+              applicant.preferredDistrict!,
+          ].join(' · ');
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border:
+            Border.all(color: const Color(0xFF1E6B42).withValues(alpha: 0.12)),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                UserAvatar(
+                  name: displayName,
+                  avatarUrl: applicant?.avatarUrl,
+                  radius: 20,
+                  backgroundColor:
+                      const Color(0xFF1E6B42).withValues(alpha: 0.12),
+                  foregroundColor: const Color(0xFF1E6B42),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        displayName,
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w900,
+                          color: const Color(0xFF173321),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '已接受球友',
+                        style: textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF55655B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                _StatusBadge(
+                  label: '已接受',
+                  accent: Colors.green,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: <Widget>[
+                _StatusBadge(
+                  label: '可聯絡',
+                  accent: Colors.teal,
+                ),
+                _StatusBadge(
+                  label: '已進名單',
+                  accent: Colors.green,
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              detailLine,
+              style: textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF6A7A70),
+              ),
+            ),
+            if (request.approvedAt != null) ...<Widget>[
+              const SizedBox(height: 12),
+              _InfoPill(
+                icon: Icons.verified_rounded,
+                label: '已接受於 ${_formatDateTime(request.approvedAt!)}',
+              ),
+              const SizedBox(height: 10),
+              const StatusCallout(
+                title: '聯絡方式已解鎖',
+                message: '這位球友已被接受，後續聯絡、出席確認與名單追蹤都可以直接進行。',
+                icon: Icons.lock_open_rounded,
+                tone: StatusCalloutTone.success,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -863,14 +1034,14 @@ class _RequestsHero extends StatelessWidget {
     required this.detail,
     required this.pendingCount,
     required this.approvedCount,
-    required this.rejectedCount,
+    required this.historyCount,
     required this.totalCount,
   });
 
   final GameDetail detail;
   final int pendingCount;
   final int approvedCount;
-  final int rejectedCount;
+  final int historyCount;
   final int totalCount;
 
   @override
@@ -915,7 +1086,7 @@ class _RequestsHero extends StatelessWidget {
                 ),
                 const Spacer(),
                 _HeroBadge(
-                  label: '$totalCount requests',
+                  label: '共 $totalCount 筆申請',
                   icon: Icons.inbox_rounded,
                 ),
               ],
@@ -943,19 +1114,157 @@ class _RequestsHero extends StatelessWidget {
               runSpacing: 10,
               children: <Widget>[
                 _HeroChip(
-                    label: 'Pending $pendingCount',
+                    label: '待審核 $pendingCount',
                     icon: Icons.hourglass_top_rounded),
                 _HeroChip(
-                    label: 'Approved $approvedCount',
-                    icon: Icons.verified_rounded),
+                    label: '已接受 $approvedCount', icon: Icons.verified_rounded),
                 _HeroChip(
-                    label: 'Rejected $rejectedCount',
-                    icon: Icons.block_rounded),
+                    label: '名單 $approvedCount/${detail.capacity}',
+                    icon: Icons.groups_rounded),
+                _HeroChip(
+                    label: '已處理 $historyCount', icon: Icons.history_rounded),
               ],
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _HostActionCard extends StatelessWidget {
+  const _HostActionCard({
+    required this.detail,
+    required this.isBusy,
+    required this.onEdit,
+    required this.onCancel,
+  });
+
+  final GameDetail detail;
+  final bool isBusy;
+  final VoidCallback onEdit;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    return SectionCard(
+      title: '主揪管理',
+      subtitle: '先改球局資料，再決定要不要取消。',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          StatusCallout(
+            title: '主揪工作台',
+            message: '不用離開這個頁面，就能更新球局名稱、費用、容量與備註，或直接取消這場球局。',
+            icon: detail.isHistorical
+                ? Icons.history_rounded
+                : detail.isClosedForJoin
+                    ? Icons.lock_rounded
+                    : Icons.manage_accounts_rounded,
+            tone: detail.isHistorical
+                ? StatusCalloutTone.neutral
+                : detail.isClosedForJoin
+                    ? StatusCalloutTone.warning
+                    : StatusCalloutTone.info,
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: isBusy ? null : onEdit,
+                  icon: const Icon(Icons.edit_rounded),
+                  label: const Text('編輯球局'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: isBusy ? null : onCancel,
+                  icon: const Icon(Icons.cancel_rounded),
+                  label: const Text('取消球局'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RequestGroupCard extends StatelessWidget {
+  const _RequestGroupCard({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.emptyTitle,
+    required this.emptyMessage,
+    required this.emptyIcon,
+    required this.emptyTone,
+    required this.requests,
+    required this.showActions,
+    this.busyRequestId,
+    this.onApprove,
+    this.onReject,
+  });
+
+  final String title;
+  final String subtitle;
+  final String emptyTitle;
+  final String emptyMessage;
+  final IconData emptyIcon;
+  final StatusCalloutTone emptyTone;
+  final List<JoinRequestSummary> requests;
+  final bool showActions;
+  final String? busyRequestId;
+  final Future<void> Function(JoinRequestSummary request)? onApprove;
+  final Future<void> Function(JoinRequestSummary request)? onReject;
+
+  @override
+  Widget build(BuildContext context) {
+    return SectionCard(
+      title: title,
+      subtitle: subtitle,
+      child: requests.isEmpty
+          ? StatusCallout(
+              title: emptyTitle,
+              message: emptyMessage,
+              icon: emptyIcon,
+              tone: emptyTone,
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                StatusCallout(
+                  title: '$title摘要',
+                  message: _requestNamesSummary(requests),
+                  icon: emptyIcon,
+                  tone: emptyTone,
+                ),
+                const SizedBox(height: 12),
+                ...requests.map(
+                  (JoinRequestSummary request) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _JoinRequestTile(
+                      key: ValueKey<String>('join-request-${request.id}'),
+                      request: request,
+                      isBusy: busyRequestId == request.id,
+                      onApprove: showActions && onApprove != null
+                          ? () {
+                              onApprove!(request);
+                            }
+                          : () {},
+                      onReject: showActions && onReject != null
+                          ? () {
+                              onReject!(request);
+                            }
+                          : () {},
+                    ),
+                  ),
+                ),
+              ],
+            ),
     );
   }
 }
@@ -1028,5 +1337,88 @@ class _HeroChip extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+String _requestNamesSummary(List<JoinRequestSummary> requests) {
+  if (requests.isEmpty) {
+    return '目前沒有可顯示的名單。';
+  }
+
+  return '共 ${requests.length} 位球友';
+}
+
+class _NameChip extends StatelessWidget {
+  const _NameChip({
+    required this.label,
+    required this.accent,
+  });
+
+  final String label;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: accent.withValues(alpha: 0.16)),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: accent,
+              fontWeight: FontWeight.w800,
+            ),
+      ),
+    );
+  }
+}
+
+String _shortId(String value) {
+  return value.length <= 8 ? value : value.substring(0, 8);
+}
+
+String _formatDateTime(DateTime dateTime) {
+  final String date =
+      '${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')}';
+  final String time =
+      '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+  return '$date $time';
+}
+
+String _skillLevelDisplayLabel(String skillLevel) {
+  switch (skillLevel.trim().toUpperCase()) {
+    case 'L1':
+      return 'L1 初學入門';
+    case 'L2':
+      return 'L2 穩定練習中';
+    case 'L3':
+      return 'L3 穩定球友';
+    case 'L4':
+      return 'L4 高階球友';
+    case 'L5':
+      return 'L5 競賽程度';
+    default:
+      return skillLevel;
+  }
+}
+
+String _requestStatusLabel(String status) {
+  switch (status.toUpperCase()) {
+    case 'PENDING':
+      return '待審核';
+    case 'APPROVED':
+      return '已接受';
+    case 'REJECTED':
+      return '已拒絕';
+    case 'WITHDRAWN':
+      return '已撤回';
+    case 'CANCELLED':
+      return '已取消';
+    default:
+      return status;
   }
 }
