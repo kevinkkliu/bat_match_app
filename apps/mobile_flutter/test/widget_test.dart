@@ -1232,6 +1232,55 @@ void main() {
     expect(find.text('管理申請'), findsNothing);
   });
 
+  testWidgets('host created games keep manage and history actions distinct',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(_buildTestApp());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(NavigationDestination, '我的球局'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(Tab, '我建立的'));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('Friday Night Ladder'),
+      400,
+      scrollable: _verticalScrollableFinder(),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('主揪工作台'), findsWidgets);
+    expect(
+      find.byKey(const ValueKey<String>('manage-requests-game-created-001')),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('先處理待審核申請，再看參加名單'),
+      findsWidgets,
+    );
+    expect(find.text('管理申請'), findsWidgets);
+
+    await tester.scrollUntilVisible(
+      find.text('Saturday Cancelled Session'),
+      400,
+      scrollable: _verticalScrollableFinder(),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('已取消'), findsWidgets);
+    expect(find.text('查看歷史'), findsWidgets);
+
+    await tester.scrollUntilVisible(
+      find.text('Sunday Completed Session'),
+      400,
+      scrollable: _verticalScrollableFinder(),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('已結束'), findsWidgets);
+    expect(find.text('查看歷史'), findsWidgets);
+  });
+
   testWidgets('host can reject join requests from created games',
       (WidgetTester tester) async {
     await tester.pumpWidget(_buildTestApp());

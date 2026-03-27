@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import type { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { prisma } from '../../lib/prisma';
 import { AppError } from '../../lib/errors';
 import { z } from 'zod';
@@ -9,10 +9,63 @@ function generateState(): string {
   return crypto.randomBytes(16).toString('hex');
 }
 
+type LineLoginState = {
+  nonce: string;
+  redirectTo?: string;
+};
+
+function encodeState(state: LineLoginState): string {
+  return Buffer.from(JSON.stringify(state), 'utf8').toString('base64url');
+}
+
+function decodeState(value?: string): LineLoginState | null {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(Buffer.from(value, 'base64url').toString('utf8')) as LineLoginState;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function getRequestBaseUrl(request: FastifyRequest): string {
+  const forwardedProtoHeader = request.headers['x-forwarded-proto'];
+  const forwardedHostHeader = request.headers['x-forwarded-host'];
+  const forwardedProto = Array.isArray(forwardedProtoHeader)
+    ? forwardedProtoHeader[0]
+    : forwardedProtoHeader;
+  const forwardedHost = Array.isArray(forwardedHostHeader)
+    ? forwardedHostHeader[0]
+    : forwardedHostHeader;
+  const hostHeader = Array.isArray(request.headers.host)
+    ? request.headers.host[0]
+    : request.headers.host;
+
+  const protocol = typeof forwardedProto === 'string' && forwardedProto.trim().length > 0
+    ? forwardedProto.trim()
+    : request.protocol;
+  const host = typeof forwardedHost === 'string' && forwardedHost.trim().length > 0
+    ? forwardedHost.trim()
+    : hostHeader;
+
+  if (!host) {
+    return 'http://localhost:3000';
+  }
+
+  return `${protocol}://${host}`;
+}
+
 export const lineAuthRoutes: FastifyPluginAsync = async (app) => {
   // 1. Authorization Endpoint
   app.get('/line/login', async (request, reply) => {
     const clientId = process.env.LINE_CLIENT_ID;
+    const querySchema = z.object({
+      redirectTo: z.string().url().optional(),
+    });
+    const query = querySchema.parse(request.query);
     
     // Fallback if not configured
     if (!clientId || clientId === 'mock_client_id') {
@@ -21,8 +74,12 @@ export const lineAuthRoutes: FastifyPluginAsync = async (app) => {
       // But we will follow the real LINE v2.1 redirect instructions:
     }
 
-    const redirectUri = `${process.env.API_BASE_URL || 'http://localhost:3000'}/api/v1/auth/line/callback`;
-    const state = generateState();
+    const apiBaseUrl = getRequestBaseUrl(request);
+    const redirectUri = `${apiBaseUrl}/api/v1/auth/line/callback`;
+    const state = encodeState({
+      nonce: generateState(),
+      redirectTo: query.redirectTo,
+    });
     
     // We request profile, openid, and email scopes
     const authUrl = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&scope=${encodeURIComponent('profile openid email')}`;
@@ -47,7 +104,8 @@ export const lineAuthRoutes: FastifyPluginAsync = async (app) => {
 
     const clientId = process.env.LINE_CLIENT_ID!;
     const clientSecret = process.env.LINE_CLIENT_SECRET!;
-    const redirectUri = `${process.env.API_BASE_URL || 'http://localhost:3000'}/api/v1/auth/line/callback`;
+    const apiBaseUrl = getRequestBaseUrl(request);
+    const redirectUri = `${apiBaseUrl}/api/v1/auth/line/callback`;
 
     // Exchange code for Access/ID Token
     const tokenOptions = {
@@ -130,7 +188,10 @@ export const lineAuthRoutes: FastifyPluginAsync = async (app) => {
     });
 
     // Determine return URL (Frontend App)
-    const frontendUrl = process.env.FRONTEND_WEB_URL || 'http://localhost:8080';
-    return reply.redirect(`${frontendUrl}/profile?token=${appToken}`);
+    const state = decodeState(query.state);
+    const frontendUrl = state?.redirectTo || process.env.FRONTEND_WEB_URL || 'http://localhost:8080';
+    const callbackUrl = new URL('/auth/callback', frontendUrl);
+    callbackUrl.searchParams.set('token', appToken);
+    return reply.redirect(callbackUrl.toString());
   });
 };

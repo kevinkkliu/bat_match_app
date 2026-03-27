@@ -25,12 +25,12 @@ npm run dev
 
 ## Browser Preview
 
-The root preview stack serves Flutter web through nginx and keeps the browser on the same origin as the API. That means the preview build uses an empty `API_BASE_URL`, while local `flutter run -d web-server` can still point at `http://localhost:3000`.
+The root preview stack serves Flutter web through nginx and keeps the browser on the same origin as the API. `./scripts/preview-up.sh` forces the preview build to use an empty `API_BASE_URL`, while local `flutter run -d web-server` can still point at `http://localhost:3000`.
 
 The preview scripts create `.env` from `.env.example` if needed.
 
 ```bash
-cd /mnt/d/Project/bat_dating_app
+cd <path_to_your_project>
 ./scripts/preview-up.sh
 ```
 
@@ -62,6 +62,6 @@ After seeding, Flutter discovery/detail screens should show real data.
 
 This service intentionally reuses the repo-level schema:
 
-- `/mnt/d/Project/bat_dating_app/prisma/schema.prisma`
+- `<path_to_your_project>/prisma/schema.prisma`
 
 So there is only one Prisma schema during the transition period.

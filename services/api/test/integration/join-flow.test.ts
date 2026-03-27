@@ -333,6 +333,20 @@ test('cancelled games cascade active requests and stop future joins', async () =
   assert.equal(hostJoinRequests.json.total, 1);
   assert.equal(hostJoinRequests.json.items[0].status, 'CANCELLED');
 
+  const rejectCancelledRequest = await injectJson(
+    'PATCH',
+    `/api/v1/join-requests/${pendingJoinResponse.json.joinRequest.id}/reject`,
+    {
+      headers: authHeaders(fixtures.manualHost),
+      payload: {
+        reason: 'Game is already cancelled.',
+      },
+    }
+  );
+
+  assert.equal(rejectCancelledRequest.statusCode, 409, JSON.stringify(rejectCancelledRequest.json));
+  assert.equal(rejectCancelledRequest.json.error, 'GAME_NOT_EDITABLE');
+
   const cancelledDetail = await injectJson('GET', `/api/v1/games/${fixtures.manualApproveGame.id}`, {
     headers: authHeaders(fixtures.manualApprover),
   });
@@ -469,6 +483,16 @@ test('only the host can access the participant list', async () => {
 test('completed games stay out of my games and hide host contact', async () => {
   const fixtures = await seedFixtures();
 
+  const pendingResponse = await injectJson('POST', `/api/v1/games/${fixtures.manualApproveGame.id}/join`, {
+    headers: authHeaders(fixtures.manualApprover),
+    payload: {
+      message: 'Waiting for the result.',
+    },
+  });
+
+  assert.equal(pendingResponse.statusCode, 201, JSON.stringify(pendingResponse.json));
+  assert.equal(pendingResponse.json.joinRequest.status, 'PENDING');
+
   const approvedJoinResponse = await injectJson('POST', `/api/v1/games/${fixtures.autoGame.id}/join`, {
     headers: authHeaders(fixtures.autoJoiner),
     payload: {
@@ -525,6 +549,57 @@ test('completed games stay out of my games and hide host contact', async () => {
   assert.equal(completedHostJoinRequests.statusCode, 200);
   assert.equal(completedHostJoinRequests.json.total, 1);
   assert.equal(completedHostJoinRequests.json.items[0].status, 'APPROVED');
+
+  const completedManualGameResponse = await injectJson(
+    'PATCH',
+    `/api/v1/games/${fixtures.manualApproveGame.id}/status`,
+    {
+      headers: authHeaders(fixtures.manualHost),
+      payload: {
+        status: 'COMPLETED',
+      },
+    }
+  );
+
+  assert.equal(completedManualGameResponse.statusCode, 200, JSON.stringify(completedManualGameResponse.json));
+  assert.equal(completedManualGameResponse.json.status, 'COMPLETED');
+
+  const completedManualHostJoinRequests = await injectJson(
+    'GET',
+    `/api/v1/games/${fixtures.manualApproveGame.id}/join-requests`,
+    {
+      headers: authHeaders(fixtures.manualHost),
+    }
+  );
+
+  assert.equal(completedManualHostJoinRequests.statusCode, 200);
+  assert.equal(completedManualHostJoinRequests.json.total, 1);
+  assert.equal(completedManualHostJoinRequests.json.items[0].status, 'PENDING');
+
+  const rejectCompletedGame = await injectJson(
+    'PATCH',
+    `/api/v1/join-requests/${pendingResponse.json.joinRequest.id}/reject`,
+    {
+      headers: authHeaders(fixtures.manualHost),
+      payload: {
+        reason: 'Game is already completed.',
+      },
+    }
+  );
+
+  assert.equal(rejectCompletedGame.statusCode, 409, JSON.stringify(rejectCompletedGame.json));
+  assert.equal(rejectCompletedGame.json.error, 'GAME_NOT_EDITABLE');
+
+  const approveCompletedGame = await injectJson(
+    'PATCH',
+    `/api/v1/join-requests/${pendingResponse.json.joinRequest.id}/approve`,
+    {
+      headers: authHeaders(fixtures.manualHost),
+    }
+  );
+
+  assert.equal(approveCompletedGame.statusCode, 409, JSON.stringify(approveCompletedGame.json));
+  assert.equal(approveCompletedGame.json.error, 'GAME_NOT_EDITABLE');
 
   const withdrawCompletedGame = await injectJson(
     'PATCH',

@@ -5,13 +5,13 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 COMPOSE_FILE="$REPO_ROOT/docker-compose.yml"
 
 resolve_docker_cmd() {
-  if command -v docker.exe >/dev/null 2>&1; then
-    echo "docker.exe"
+  if command -v docker >/dev/null 2>&1; then
+    echo "docker"
     return
   fi
 
-  if command -v docker >/dev/null 2>&1; then
-    echo "docker"
+  if command -v docker.exe >/dev/null 2>&1; then
+    echo "docker.exe"
     return
   fi
 

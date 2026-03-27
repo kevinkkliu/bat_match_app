@@ -1,7 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../config/app_config.dart';
+
+const String _authTokenStorageKey = 'bat_dating_auth_token';
 
 final Provider<Dio> dioProvider = Provider<Dio>((Ref ref) {
   final Map<String, String> headers = <String, String>{
@@ -12,7 +15,9 @@ final Provider<Dio> dioProvider = Provider<Dio>((Ref ref) {
     headers['x-dev-user-email'] = AppConfig.devUserEmail;
   }
 
-  return Dio(
+  final FlutterSecureStorage storage = const FlutterSecureStorage();
+
+  final Dio dio = Dio(
     BaseOptions(
       baseUrl: AppConfig.apiBaseUrl,
       connectTimeout: const Duration(seconds: 10),
@@ -21,4 +26,22 @@ final Provider<Dio> dioProvider = Provider<Dio>((Ref ref) {
       headers: headers,
     ),
   );
+
+  dio.interceptors.add(
+    InterceptorsWrapper(
+      onRequest: (RequestOptions options, RequestInterceptorHandler handler) async {
+        final String? token = await storage.read(key: _authTokenStorageKey);
+
+        if (token != null && token.isNotEmpty) {
+          options.headers['Authorization'] = 'Bearer $token';
+        } else {
+          options.headers.remove('Authorization');
+        }
+
+        handler.next(options);
+      },
+    ),
+  );
+
+  return dio;
 });

@@ -40,7 +40,7 @@ class AsyncStateView extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  'Loading live data',
+                  '正在載入資料',
                   style: textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: colorScheme.onSurfaceVariant,
@@ -77,7 +77,7 @@ class AsyncStateView extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Unable to load data',
+                      '目前無法載入資料',
                       style: textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w800,
                         color: colorScheme.onErrorContainer,

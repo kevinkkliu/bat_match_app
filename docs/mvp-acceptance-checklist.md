@@ -10,7 +10,7 @@ This checklist turns the PRD into an executable review path for product, QA, and
 
 ## Demo Path
 
-Use the repo root demo script when you want a reproducible review flow. It reseeds the database, starts the same-origin preview, and makes `host`/`guest` review repeatable without manual setup.
+Use the repo root demo script for a reproducible review flow. It reseeds the database, starts the same-origin preview, and keeps host/guest review repeatable without manual setup.
 
 ```bash
 cd <path_to_your_project>
@@ -24,7 +24,7 @@ cd <path_to_your_project>
 ./scripts/demo-preview.sh guest
 ```
 
-Suggested order for a demo session:
+Suggested demo order:
 
 1. Run `./scripts/demo-preview.sh host`
 2. Open `http://localhost:8080`
@@ -33,7 +33,7 @@ Suggested order for a demo session:
 5. Re-open `http://localhost:8080`
 6. Review browse-only behavior without a seeded preview host account
 
-If you forget the exact flags, run `./scripts/demo-preview.sh --help`.
+If you forget the flags, run `./scripts/demo-preview.sh --help`.
 
 ## Locked MVP Clarifications
 
@@ -105,6 +105,7 @@ If you forget the exact flags, run `./scripts/demo-preview.sh --help`.
 - Confirm the host can see pending requests.
 - Confirm the host can approve a request and the game updates its remaining spots.
 - Confirm the host can reject a request and the request leaves the pending state.
+- Confirm cancelled or completed games still show the participant list but no longer allow approve/reject actions.
 - Confirm non-host users cannot review another host's requests.
 
 ### 7) Withdraw

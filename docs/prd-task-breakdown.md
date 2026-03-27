@@ -11,6 +11,8 @@ It is intended to answer:
 - how work should be split across product, Flutter, API, and QA
 - what order the team should execute in
 
+The executable QA checklist lives in [mvp-acceptance-checklist.md](<path_to_your_project>/docs/mvp-acceptance-checklist.md).
+
 ## Scope Baseline
 
 ### MVP P0 from PRD
@@ -88,16 +90,26 @@ Close the gap between PRD intent and current implementation details so engineeri
 - Define onboarding minimum:
   - required fields at registration
   - optional fields deferred to profile edit
+- Lock the MVP assumptions used by QA:
+  - guests can browse feed and detail without signing in
+  - protected actions show auth-required behavior instead of failing silently
+  - in MVP there is no in-app chat
+  - contact handoff is limited to authenticated and relevant participants
+  - rejected, withdrawn, or cancelled requests do not unlock contact access
+  - host cancellation is terminal for new joins
+  - approved player withdrawal returns the reserved spot
 
 ### Deliverables
 
 - feature scope sheet
 - release checklist
 - guest/auth/contact policy notes
+- executable MVP acceptance checklist
 
 ### Exit Criteria
 
 - no open ambiguity on guest access, contact exposure, or cancel flow
+- QA can run the acceptance checklist without needing product clarification
 
 ## 2. Flutter App
 
@@ -206,10 +218,12 @@ Keep local development, preview, and testing reproducible for every engineer.
 - stable local debug flow
 - stable preview flow
 - no hidden machine-specific setup assumptions
+- seeded demo runbook linked from the root README and acceptance checklist
 
 ### Exit Criteria
 
 - a new engineer can get API, DB, and Flutter web running from docs alone
+- a reviewer can launch a seeded demo from the repo root without guessing which script to run
 
 ## 5. QA And Acceptance
 
@@ -241,6 +255,7 @@ Turn PRD outcomes into a repeatable acceptance checklist instead of ad hoc manua
   - seeded accounts
   - seeded games
   - test database reset flow
+- Keep acceptance language aligned with [mvp-acceptance-checklist.md](<path_to_your_project>/docs/mvp-acceptance-checklist.md)
 
 ### Deliverables
 
@@ -251,6 +266,7 @@ Turn PRD outcomes into a repeatable acceptance checklist instead of ad hoc manua
 ### Exit Criteria
 
 - every P0 story in PRD maps to at least one executable acceptance scenario
+- checklist includes guest browse, auth, create, AUTO join, MANUAL request, approve/reject, withdraw, my games, and preview review path
 
 ## Recommended Execution Order
 

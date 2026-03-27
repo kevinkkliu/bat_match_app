@@ -69,7 +69,7 @@ test('register, login, auth/me, and users/me update the profile', async () => {
   });
 
   assert.equal(duplicateRegister.statusCode, 409);
-  assert.equal(duplicateRegister.json.error, 'USER_ALREADY_EXISTS');
+  assert.equal(duplicateRegister.json.error, 'EMAIL_ALREADY_IN_USE');
 
   const loginResponse = await injectJson('POST', '/api/v1/auth/login', {
     payload: {
@@ -114,6 +114,67 @@ test('register, login, auth/me, and users/me update the profile', async () => {
 
   assert.equal(refreshed.statusCode, 200);
   assert.equal(refreshed.json.user.nickname, 'Updated Player');
+});
+
+test('register requires at least one of email or phoneNumber', async () => {
+  const response = await injectJson('POST', '/api/v1/auth/register', {
+    payload: {
+      email: '   ',
+      phoneNumber: '   ',
+      password: 'password123',
+      nickname: 'Missing Contacts',
+      skillLevel: 'L2',
+    },
+  });
+
+  assert.equal(response.statusCode, 400);
+  assert.equal(response.json.error, 'VALIDATION_ERROR');
+  assert.equal(response.json.message, 'Request validation failed.');
+  assert.deepEqual(response.json.details.issues, [
+    {
+      path: 'email',
+      message: 'Provide at least one of email or phoneNumber.',
+      code: 'custom',
+    },
+  ]);
+});
+
+test('register supports phone-only signup and rejects duplicate phone numbers', async () => {
+  const registerResponse = await injectJson('POST', '/api/v1/auth/register', {
+    payload: {
+      phoneNumber: '0912345678',
+      password: 'password123',
+      nickname: 'Phone Player',
+      skillLevel: 'L4',
+    },
+  });
+
+  assert.equal(registerResponse.statusCode, 201, JSON.stringify(registerResponse.json));
+  assert.equal(registerResponse.json.user.nickname, 'Phone Player');
+  assert.equal(registerResponse.json.user.skillLevel, 'L4');
+
+  const duplicatePhoneResponse = await injectJson('POST', '/api/v1/auth/register', {
+    payload: {
+      phoneNumber: '0912345678',
+      password: 'password123',
+      nickname: 'Phone Player Clone',
+      skillLevel: 'L3',
+    },
+  });
+
+  assert.equal(duplicatePhoneResponse.statusCode, 409);
+  assert.equal(duplicatePhoneResponse.json.error, 'PHONE_NUMBER_ALREADY_IN_USE');
+  assert.equal(duplicatePhoneResponse.json.message, 'Phone number is already in use.');
+
+  const loginResponse = await injectJson('POST', '/api/v1/auth/login', {
+    payload: {
+      emailOrPhone: '0912345678',
+      password: 'password123',
+    },
+  });
+
+  assert.equal(loginResponse.statusCode, 200);
+  assert.equal(loginResponse.json.user.id, registerResponse.json.user.id);
 });
 
 test('login rejects an invalid password', async () => {

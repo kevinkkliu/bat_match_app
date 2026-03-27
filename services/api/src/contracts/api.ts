@@ -39,6 +39,7 @@ export type GameSummaryDto = {
 
 export type GameDetailDto = GameSummaryDto & {
   notes: string | null;
+  canViewHostContact: boolean;
   joinSummary: {
     currentUserStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | 'WITHDRAWN' | 'CANCELLED' | null;
     currentUserRequestId: string | null;

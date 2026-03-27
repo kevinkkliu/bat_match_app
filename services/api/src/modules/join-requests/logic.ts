@@ -109,6 +109,16 @@ function ensureGameJoinable(gameStatus: GameStatus): void {
   }
 }
 
+function ensureGameJoinRequestActionable(gameStatus: GameStatus): void {
+  if (gameStatus === GameStatus.CANCELLED || gameStatus === GameStatus.COMPLETED) {
+    throw new AppError(
+      409,
+      'GAME_NOT_EDITABLE',
+      'Cancelled or completed games cannot change join requests.'
+    );
+  }
+}
+
 function ensureHost(userId: string, hostId: string, message: string): void {
   if (userId !== hostId) {
     throw new AppError(403, 'FORBIDDEN', message);
@@ -502,6 +512,7 @@ export async function rejectJoinRequest(
     }
 
     ensureHost(userId, joinRequest.game.hostId, 'Only the host can reject this join request.');
+    ensureGameJoinRequestActionable(joinRequest.game.status);
     ensurePending(joinRequest);
 
     const updatedJoinRequest = await tx.joinRequest.update({

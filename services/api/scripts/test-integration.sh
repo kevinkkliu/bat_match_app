@@ -24,9 +24,14 @@ export POSTGRES_PORT
 
 bash ./scripts/db-up.sh
 
-DOCKER_CMD="docker"
-if command -v docker.exe >/dev/null 2>&1; then
+DOCKER_CMD=""
+if command -v docker >/dev/null 2>&1; then
+  DOCKER_CMD="docker"
+elif command -v docker.exe >/dev/null 2>&1; then
   DOCKER_CMD="docker.exe"
+else
+  echo "docker command is required for integration tests." >&2
+  exit 1
 fi
 
 "$DOCKER_CMD" exec bat-dating-postgres sh -lc '

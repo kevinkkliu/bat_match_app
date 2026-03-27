@@ -1,5 +1,4 @@
 import type { UserSummaryDto } from '../../contracts/api';
-import { Prisma } from '@prisma/client';
 import { AppError } from '../../lib/errors';
 import { prisma } from '../../lib/prisma';
 import { hashPassword, verifyPassword } from './password';
@@ -10,30 +9,27 @@ export class AuthService {
   async register(input: RegisterBody): Promise<UserSummaryDto> {
     const email = input.email?.trim().toLowerCase() ?? null;
     const phoneNumber = input.phoneNumber?.trim() ?? null;
-    const uniqueCriteria: Prisma.UserWhereInput[] = [];
 
     if (email) {
-      uniqueCriteria.push({ email });
+      const existingEmailUser = await prisma.user.findUnique({
+        where: { email },
+        select: { id: true },
+      });
+
+      if (existingEmailUser) {
+        throw new AppError(409, 'EMAIL_ALREADY_IN_USE', 'Email is already in use.');
+      }
     }
 
     if (phoneNumber) {
-      uniqueCriteria.push({ phoneNumber });
-    }
+      const existingPhoneUser = await prisma.user.findUnique({
+        where: { phoneNumber },
+        select: { id: true },
+      });
 
-    const existing =
-      uniqueCriteria.length > 0
-        ? await prisma.user.findFirst({
-            where: {
-              OR: uniqueCriteria,
-            },
-            select: {
-              id: true,
-            },
-          })
-        : null;
-
-    if (existing) {
-      throw new AppError(409, 'USER_ALREADY_EXISTS', 'Email or phone number is already in use.');
+      if (existingPhoneUser) {
+        throw new AppError(409, 'PHONE_NUMBER_ALREADY_IN_USE', 'Phone number is already in use.');
+      }
     }
 
     const user = await prisma.user.create({

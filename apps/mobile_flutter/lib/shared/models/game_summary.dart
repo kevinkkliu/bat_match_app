@@ -105,6 +105,10 @@ class GameSummary {
 
   bool get isOpen => status == 'OPEN';
   bool get isFull => status == 'FULL' || availableSpots <= 0;
+  bool get isCancelled => status == 'CANCELLED';
+  bool get isCompleted => status == 'COMPLETED';
+  bool get isHistorical => isCancelled || isCompleted;
+  bool get isClosedForJoin => isFull || isHistorical || !isOpen;
 }
 
 class GameJoinSummary {

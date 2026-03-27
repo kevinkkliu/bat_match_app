@@ -492,9 +492,17 @@ Response `200`:
 
 Host-only, authenticated endpoint.
 
+`approve` is only allowed while the request is still `PENDING` and the parent game is not `CANCELLED` or `COMPLETED`.
+If the game has already been cancelled or completed, the API returns `409 GAME_NOT_EDITABLE`.
+
 Response `200`: `JoinRequestDto` + updated game slot summary.
 
 ### `PATCH /api/v1/join-requests/:joinRequestId/reject`
+
+Host-only, authenticated endpoint.
+
+`reject` is only allowed while the request is still `PENDING` and the parent game is not `CANCELLED` or `COMPLETED`.
+If the game has already been cancelled or completed, the API returns `409 GAME_NOT_EDITABLE`.
 
 Request:
 

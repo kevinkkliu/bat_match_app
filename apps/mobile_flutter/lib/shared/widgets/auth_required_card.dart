@@ -8,7 +8,7 @@ class AuthRequiredCard extends StatelessWidget {
     required this.title,
     required this.message,
     required this.onSignInPressed,
-    this.buttonLabel = 'Go to profile',
+    this.buttonLabel = '前往登入 / 註冊',
   });
 
   final String title;
@@ -20,7 +20,7 @@ class AuthRequiredCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return SectionCard(
       title: title,
-      subtitle: 'Sign in required',
+      subtitle: '訪客可瀏覽，登入後才能操作',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[

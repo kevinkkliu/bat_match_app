@@ -25,22 +25,22 @@ class AppRouteNames {
 
 enum AppTab {
   home(
-    label: 'Home',
+    label: '探索',
     icon: Icons.sports_tennis,
     path: AppRoutePaths.home,
   ),
   create(
-    label: 'Create',
+    label: '開團',
     icon: Icons.add_circle_outline,
     path: AppRoutePaths.create,
   ),
   myGames(
-    label: 'My Games',
+    label: '我的球局',
     icon: Icons.event_note_outlined,
     path: AppRoutePaths.myGames,
   ),
   profile(
-    label: 'Profile',
+    label: '個人',
     icon: Icons.person_outline,
     path: AppRoutePaths.profile,
   );

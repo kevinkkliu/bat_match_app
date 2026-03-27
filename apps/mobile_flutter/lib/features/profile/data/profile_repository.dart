@@ -33,7 +33,7 @@ class ProfileUser {
   factory ProfileUser.guest() {
     return const ProfileUser(
       id: 'guest',
-      nickname: 'Guest',
+      nickname: '訪客',
       avatarUrl: null,
       gender: null,
       skillLevel: 'L1',

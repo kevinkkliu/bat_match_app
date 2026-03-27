@@ -21,19 +21,19 @@ class CreateGamePage extends ConsumerStatefulWidget {
 
 class _CreateGamePageState extends ConsumerState<CreateGamePage> {
   final TextEditingController _titleController = TextEditingController(
-    text: 'Saturday Intermediate Doubles',
+    text: '週六中階雙打',
   );
   final TextEditingController _cityController = TextEditingController(
-    text: 'Taipei City',
+    text: '台北市',
   );
   final TextEditingController _districtController = TextEditingController(
-    text: "Da'an",
+    text: '大安區',
   );
   final TextEditingController _venueNameController = TextEditingController(
-    text: 'NTU Sports Center',
+    text: '台大體育館',
   );
   final TextEditingController _venueAddressController = TextEditingController(
-    text: 'No. 1, Sec. 4, Roosevelt Rd.',
+    text: '羅斯福路四段 1 號',
   );
   final TextEditingController _feeController =
       TextEditingController(text: '220');
@@ -42,7 +42,7 @@ class _CreateGamePageState extends ConsumerState<CreateGamePage> {
   final TextEditingController _courtCountController =
       TextEditingController(text: '2');
   final TextEditingController _notesController = TextEditingController(
-    text: 'Created from Flutter form.',
+    text: '由 Flutter 表單建立。',
   );
 
   DateTime _selectedDate = DateTime.utc(2026, 4, 2);
@@ -80,8 +80,8 @@ class _CreateGamePageState extends ConsumerState<CreateGamePage> {
                 _CreateHero(isSubmitting: _submitting),
                 const SizedBox(height: 16),
                 SectionCard(
-                  title: 'Create game',
-                  subtitle: 'Could not load your account state.',
+                  title: '建立球局',
+                  subtitle: '無法載入你的帳號狀態。',
                   child: Text(error.toString()),
                 ),
               ],
@@ -94,9 +94,8 @@ class _CreateGamePageState extends ConsumerState<CreateGamePage> {
                     _CreateHero(isSubmitting: _submitting),
                     const SizedBox(height: 16),
                     AuthRequiredCard(
-                      title: 'Host tools are locked for guests',
-                      message:
-                          'Sign in or register before you publish a game. Guests can still browse open matches from Home.',
+                      title: '訪客無法使用主揪工具',
+                      message: '訪客可以先瀏覽公開球局；登入後才能發佈球局、保存草稿與管理報名。',
                       onSignInPressed: () => context.go(AppRoutePaths.profile),
                     ),
                   ],
@@ -109,228 +108,227 @@ class _CreateGamePageState extends ConsumerState<CreateGamePage> {
                   _CreateHero(isSubmitting: _submitting),
                   const SizedBox(height: 16),
                   SectionCard(
-                title: 'Game basics',
-                subtitle: 'Name the session and set the venue.',
-                child: Column(
-                  children: <Widget>[
-                    TextField(
-                      controller: _titleController,
-                      decoration: const InputDecoration(labelText: 'Title'),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
+                    title: '基本資訊',
+                    subtitle: '先填球局名稱與場地資訊。',
+                    child: Column(
                       children: <Widget>[
-                        Expanded(
-                          child: TextField(
-                            controller: _cityController,
-                            decoration:
-                                const InputDecoration(labelText: 'City'),
-                          ),
+                        TextField(
+                          controller: _titleController,
+                          decoration: const InputDecoration(labelText: '球局名稱'),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextField(
-                            controller: _districtController,
-                            decoration:
-                                const InputDecoration(labelText: 'District'),
-                          ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: TextField(
+                                controller: _cityController,
+                                decoration:
+                                    const InputDecoration(labelText: '城市'),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextField(
+                                controller: _districtController,
+                                decoration:
+                                    const InputDecoration(labelText: '行政區'),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _venueNameController,
+                          decoration: const InputDecoration(labelText: '場館名稱'),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _venueAddressController,
+                          decoration: const InputDecoration(labelText: '場館地址'),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _venueNameController,
-                      decoration:
-                          const InputDecoration(labelText: 'Venue name'),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _venueAddressController,
-                      decoration:
-                          const InputDecoration(labelText: 'Venue address'),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              SectionCard(
-                title: 'Schedule',
-                subtitle: 'Pick the date and time window.',
-                child: Column(
-                  children: <Widget>[
-                    Row(
+                  ),
+                  const SizedBox(height: 16),
+                  SectionCard(
+                    title: '時間安排',
+                    subtitle: '選擇日期與時間區間。',
+                    child: Column(
                       children: <Widget>[
-                        Expanded(
-                          child: FilledButton.tonal(
-                            onPressed: _pickDate,
-                            child: Text(_formatDate(_selectedDate)),
-                          ),
+                        Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: FilledButton.tonal(
+                                onPressed: _pickDate,
+                                child: Text(_formatDate(_selectedDate)),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: FilledButton.tonal(
+                                onPressed: () => _pickTime(isStart: true),
+                                child: Text(_startTime.format(context)),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: FilledButton.tonal(
+                                onPressed: () => _pickTime(isStart: false),
+                                child: Text(_endTime.format(context)),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: FilledButton.tonal(
-                            onPressed: () => _pickTime(isStart: true),
-                            child: Text(_startTime.format(context)),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: FilledButton.tonal(
-                            onPressed: () => _pickTime(isStart: false),
-                            child: Text(_endTime.format(context)),
-                          ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: _DateSummaryTile(
+                                label: '開始',
+                                value: _startTime.format(context),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _DateSummaryTile(
+                                label: '結束',
+                                value: _endTime.format(context),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    Row(
+                  ),
+                  const SizedBox(height: 16),
+                  SectionCard(
+                    title: '球局規則',
+                    subtitle: '設定程度與報名方式。',
+                    child: Column(
                       children: <Widget>[
-                        Expanded(
-                          child: _DateSummaryTile(
-                            label: 'Start',
-                            value: _startTime.format(context),
-                          ),
+                        Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: DropdownButtonFormField<String>(
+                                initialValue: _skillLevelMin,
+                                decoration:
+                                    const InputDecoration(labelText: '最低程度'),
+                                items: _skillItems,
+                                onChanged: (String? value) {
+                                  if (value == null) return;
+                                  setState(() => _skillLevelMin = value);
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: DropdownButtonFormField<String>(
+                                initialValue: _skillLevelMax,
+                                decoration:
+                                    const InputDecoration(labelText: '最高程度'),
+                                items: _skillItems,
+                                onChanged: (String? value) {
+                                  setState(() => _skillLevelMax = value);
+                                },
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _DateSummaryTile(
-                            label: 'End',
-                            value: _endTime.format(context),
-                          ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: TextField(
+                                controller: _feeController,
+                                decoration:
+                                    const InputDecoration(labelText: '費用'),
+                                keyboardType: TextInputType.number,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextField(
+                                controller: _capacityController,
+                                decoration:
+                                    const InputDecoration(labelText: '容量'),
+                                keyboardType: TextInputType.number,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextField(
+                                controller: _courtCountController,
+                                decoration:
+                                    const InputDecoration(labelText: '場地數'),
+                                keyboardType: TextInputType.number,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: DropdownButtonFormField<String>(
+                                initialValue: _approvalMode,
+                                decoration:
+                                    const InputDecoration(labelText: '審核方式'),
+                                items: const <DropdownMenuItem<String>>[
+                                  DropdownMenuItem(
+                                      value: 'AUTO', child: Text('自動審核')),
+                                  DropdownMenuItem(
+                                      value: 'MANUAL', child: Text('人工審核')),
+                                ],
+                                onChanged: (String? value) {
+                                  if (value == null) return;
+                                  setState(() => _approvalMode = value);
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: DropdownButtonFormField<String>(
+                                initialValue: _shuttleType,
+                                decoration:
+                                    const InputDecoration(labelText: '球種'),
+                                items: const <DropdownMenuItem<String>>[
+                                  DropdownMenuItem(
+                                      value: 'FEATHER', child: Text('羽毛球')),
+                                  DropdownMenuItem(
+                                      value: 'NYLON', child: Text('尼龍球')),
+                                  DropdownMenuItem(
+                                      value: 'MIXED', child: Text('混合球種')),
+                                ],
+                                onChanged: (String? value) {
+                                  setState(() => _shuttleType = value);
+                                },
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              SectionCard(
-                title: 'Format',
-                subtitle: 'Set the match difficulty and admission flow.',
-                child: Column(
-                  children: <Widget>[
-                    Row(
-                      children: <Widget>[
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            initialValue: _skillLevelMin,
-                            decoration:
-                                const InputDecoration(labelText: 'Min skill'),
-                            items: _skillItems,
-                            onChanged: (String? value) {
-                              if (value == null) return;
-                              setState(() => _skillLevelMin = value);
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            initialValue: _skillLevelMax,
-                            decoration:
-                                const InputDecoration(labelText: 'Max skill'),
-                            items: _skillItems,
-                            onChanged: (String? value) {
-                              setState(() => _skillLevelMax = value);
-                            },
-                          ),
-                        ),
-                      ],
+                  ),
+                  const SizedBox(height: 16),
+                  SectionCard(
+                    title: '備註',
+                    subtitle: '給會加入的球友一些補充資訊。',
+                    child: TextField(
+                      controller: _notesController,
+                      decoration: const InputDecoration(labelText: '備註'),
+                      maxLines: 4,
                     ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: <Widget>[
-                        Expanded(
-                          child: TextField(
-                            controller: _feeController,
-                            decoration: const InputDecoration(labelText: 'Fee'),
-                            keyboardType: TextInputType.number,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextField(
-                            controller: _capacityController,
-                            decoration:
-                                const InputDecoration(labelText: 'Capacity'),
-                            keyboardType: TextInputType.number,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextField(
-                            controller: _courtCountController,
-                            decoration:
-                                const InputDecoration(labelText: 'Courts'),
-                            keyboardType: TextInputType.number,
-                          ),
-                        ),
-                      ],
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton.icon(
+                    onPressed: _submitting ? null : _submit,
+                    icon: Icon(
+                      _submitting
+                          ? Icons.hourglass_top_rounded
+                          : Icons.add_circle_rounded,
                     ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: <Widget>[
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            initialValue: _approvalMode,
-                            decoration:
-                                const InputDecoration(labelText: 'Approval'),
-                            items: const <DropdownMenuItem<String>>[
-                              DropdownMenuItem(
-                                  value: 'AUTO', child: Text('AUTO')),
-                              DropdownMenuItem(
-                                  value: 'MANUAL', child: Text('MANUAL')),
-                            ],
-                            onChanged: (String? value) {
-                              if (value == null) return;
-                              setState(() => _approvalMode = value);
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            initialValue: _shuttleType,
-                            decoration:
-                                const InputDecoration(labelText: 'Shuttle'),
-                            items: const <DropdownMenuItem<String>>[
-                              DropdownMenuItem(
-                                  value: 'FEATHER', child: Text('FEATHER')),
-                              DropdownMenuItem(
-                                  value: 'NYLON', child: Text('NYLON')),
-                              DropdownMenuItem(
-                                  value: 'MIXED', child: Text('MIXED')),
-                            ],
-                            onChanged: (String? value) {
-                              setState(() => _shuttleType = value);
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              SectionCard(
-                title: 'Notes',
-                subtitle: 'Optional context for the players who join.',
-                child: TextField(
-                  controller: _notesController,
-                  decoration: const InputDecoration(labelText: 'Notes'),
-                  maxLines: 4,
-                ),
-              ),
-              const SizedBox(height: 16),
-              FilledButton.icon(
-                onPressed: _submitting ? null : _submit,
-                icon: Icon(
-                  _submitting
-                      ? Icons.hourglass_top_rounded
-                      : Icons.add_circle_rounded,
-                ),
-                label: Text(_submitting ? 'Creating...' : 'Create game'),
-              ),
+                    label: Text(_submitting ? '建立中…' : '建立球局'),
+                  ),
                 ],
               );
             },
@@ -392,7 +390,7 @@ class _CreateGamePageState extends ConsumerState<CreateGamePage> {
     final int? courtCount = int.tryParse(_courtCountController.text.trim());
 
     if (fee == null || capacity == null || courtCount == null) {
-      _showMessage('Fee, capacity, and courts must be valid numbers.');
+      _showMessage('費用、容量與場地數必須是有效數字。');
       return;
     }
 
@@ -412,7 +410,7 @@ class _CreateGamePageState extends ConsumerState<CreateGamePage> {
     );
 
     if (!endAt.isAfter(startAt)) {
-      _showMessage('End time must be later than start time.');
+      _showMessage('結束時間必須晚於開始時間。');
       return;
     }
 
@@ -450,15 +448,14 @@ class _CreateGamePageState extends ConsumerState<CreateGamePage> {
         return;
       }
 
-      _showMessage('Game created.');
+      _showMessage('球局已建立。');
       context.goNamed(
         AppRouteNames.gameDetail,
         pathParameters: <String, String>{'gameId': created.id},
       );
     } on DioException catch (error) {
-      _showMessage(error.response?.data?.toString() ??
-          error.message ??
-          'Create failed.');
+      _showMessage(
+          error.response?.data?.toString() ?? error.message ?? '建立失敗。');
     } catch (error) {
       _showMessage(error.toString());
     } finally {
@@ -487,10 +484,27 @@ class _CreateGamePageState extends ConsumerState<CreateGamePage> {
         .map(
           (String value) => DropdownMenuItem<String>(
             value: value,
-            child: Text(value),
+            child: Text(_skillLevelDisplayLabel(value)),
           ),
         )
         .toList(growable: false);
+  }
+}
+
+String _skillLevelDisplayLabel(String skillLevel) {
+  switch (skillLevel.toUpperCase()) {
+    case 'L1':
+      return 'L1 初學入門';
+    case 'L2':
+      return 'L2 穩定練習中';
+    case 'L3':
+      return 'L3 穩定球友';
+    case 'L4':
+      return 'L4 高階球友';
+    case 'L5':
+      return 'L5 競賽程度';
+    default:
+      return skillLevel;
   }
 }
 
@@ -545,7 +559,7 @@ class _CreateHero extends StatelessWidget {
                 ),
                 const Spacer(),
                 _HeroBadge(
-                  label: isSubmitting ? 'Saving...' : 'Preview ready',
+                  label: isSubmitting ? '儲存中…' : '預覽就緒',
                   icon: isSubmitting
                       ? Icons.hourglass_top_rounded
                       : Icons.phone_iphone_rounded,
@@ -554,7 +568,7 @@ class _CreateHero extends StatelessWidget {
             ),
             const SizedBox(height: 18),
             Text(
-              'Create a clean match',
+              '開一場清楚的球局',
               style: textTheme.headlineSmall?.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.w900,
@@ -563,7 +577,7 @@ class _CreateHero extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Split into clear sections so the form is easy to scan on Android.',
+              '把表單分成清楚區塊，讓主揪快速掃過每個重點。',
               style: textTheme.bodyMedium?.copyWith(
                 color: Colors.white.withValues(alpha: 0.84),
                 height: 1.45,

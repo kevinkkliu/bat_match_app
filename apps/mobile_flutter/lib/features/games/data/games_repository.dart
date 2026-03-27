@@ -262,6 +262,14 @@ class JoinRequestSummary {
   final DateTime createdAt;
   final DateTime updatedAt;
   final JoinRequestApplicant? applicant;
+
+  bool get isPending => status == 'PENDING';
+
+  bool get isApproved => status == 'APPROVED';
+
+  bool get isRejected => status == 'REJECTED';
+
+  bool get isWithdrawn => status == 'WITHDRAWN' || status == 'CANCELLED';
 }
 
 class JoinRequestApplicant {

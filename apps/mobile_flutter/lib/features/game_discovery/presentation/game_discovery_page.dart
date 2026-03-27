@@ -52,7 +52,7 @@ class _GameDiscoveryPageState extends ConsumerState<GameDiscoveryPage> {
         ref.watch(gamesListProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Discover')),
+      appBar: AppBar(title: const Text('發現球局')),
       body: DecoratedBox(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -87,9 +87,8 @@ class _GameDiscoveryPageState extends ConsumerState<GameDiscoveryPage> {
                       ),
                       const SizedBox(height: 16),
                       SectionCard(
-                        title: 'Search & filters',
-                        subtitle:
-                            'Narrow the feed by place, schedule, level, fee, and vacancy.',
+                        title: '搜尋與篩選',
+                        subtitle: '用地點、時間、程度、費用與是否有空位來縮小名單。',
                         child: _FilterPanel(
                           query: query,
                           cityController: _cityController,
@@ -134,9 +133,8 @@ class _GameDiscoveryPageState extends ConsumerState<GameDiscoveryPage> {
                         Padding(
                           padding: const EdgeInsets.only(bottom: 16),
                           child: SectionCard(
-                            title: 'Active filters',
-                            subtitle:
-                                'Tap clear if you want to compare the full feed again.',
+                            title: '目前篩選',
+                            subtitle: '想回到完整名單時，可以直接清除篩選。',
                             child: Wrap(
                               spacing: 8,
                               runSpacing: 8,
@@ -145,23 +143,21 @@ class _GameDiscoveryPageState extends ConsumerState<GameDiscoveryPage> {
                           ),
                         ),
                       SectionCard(
-                        title: 'Open matches',
+                        title: '開放中的球局',
                         subtitle:
-                            '${result.items.length} visible · ${result.total} total',
+                            '顯示 ${result.items.length} 場 · 共 ${result.total} 場',
                         child: Text(
                           result.items.isEmpty
-                              ? 'No matches found with the current filter set.'
-                              : 'Sorted by date, then start time, so the earliest viable games appear first.',
+                              ? '目前篩選條件下找不到符合的球局。'
+                              : '依日期與開打時間排序，較早可加入的球局會優先顯示。',
                         ),
                       ),
                       const SizedBox(height: 16),
                       if (result.items.isEmpty)
                         const SectionCard(
-                          title: 'Nothing live right now',
-                          subtitle:
-                              'No open matches were found in the current feed.',
-                          child:
-                              Text('Try adjusting filters or create a game.'),
+                          title: '目前沒有即時開放的球局',
+                          subtitle: '目前名單裡沒有開放中的球局。',
+                          child: Text('可以調整篩選條件，或直接建立一場球局。'),
                         )
                       else
                         ...result.items.map(
@@ -246,39 +242,41 @@ class _GameDiscoveryPageState extends ConsumerState<GameDiscoveryPage> {
     final List<Widget> chips = <Widget>[];
 
     if (query.city.trim().isNotEmpty) {
-      chips.add(_FilterChip(label: 'City: ${query.city.trim()}'));
+      chips.add(_FilterChip(label: '城市：${query.city.trim()}'));
     }
 
     if (query.district.trim().isNotEmpty) {
-      chips.add(_FilterChip(label: 'District: ${query.district.trim()}'));
+      chips.add(_FilterChip(label: '行政區：${query.district.trim()}'));
     }
 
     if (query.date != null) {
       chips.add(
-        _FilterChip(label: 'Date: ${_formatDate(query.date!)}'),
+        _FilterChip(label: '日期：${_formatDate(query.date!)}'),
       );
     }
 
     if (query.timePreset != GamesFeedTimePreset.any) {
       chips.add(
-        _FilterChip(label: 'Time: ${_timePresetLabel(query.timePreset)}'),
+        _FilterChip(label: '時段：${_timePresetLabel(query.timePreset)}'),
       );
     }
 
     if (query.skillLevel.trim().isNotEmpty) {
-      chips.add(_FilterChip(label: 'Skill: ${query.skillLevel.trim()}'));
+      chips.add(
+        _FilterChip(label: '程度：${_skillLevelDisplayLabel(query.skillLevel)}'),
+      );
     }
 
     if (query.feeMin != null || query.feeMax != null) {
       chips.add(
         _FilterChip(
-          label: 'Fee: ${_formatFeeRange(query.feeMin, query.feeMax)}',
+          label: '費用：${_formatFeeRange(query.feeMin, query.feeMax)}',
         ),
       );
     }
 
     if (query.vacancyOnly) {
-      chips.add(const _FilterChip(label: 'Vacancy only'));
+      chips.add(const _FilterChip(label: '只看有空位'));
     }
 
     return chips;
@@ -303,7 +301,7 @@ class _DiscoveryHero extends StatelessWidget {
     final int manualGames =
         games.where((GameSummary game) => game.approvalMode == 'MANUAL').length;
     final String nextGameLabel = games.isEmpty
-        ? 'No live games yet'
+        ? '目前還沒有即時球局'
         : '${_formatDate(games.first.startAt)} · ${_formatTime(games.first.startAt)}';
 
     return Container(
@@ -346,14 +344,14 @@ class _DiscoveryHero extends StatelessWidget {
                 ),
                 const Spacer(),
                 _HeroBadge(
-                  label: '$totalCount live',
+                  label: '即時 $totalCount 場',
                   icon: Icons.wifi_tethering_rounded,
                 ),
               ],
             ),
             const SizedBox(height: 18),
             Text(
-              'Find a game worth joining',
+              '找到值得加入的球局',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.w900,
@@ -362,7 +360,7 @@ class _DiscoveryHero extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Scan the live feed, compare the practical details, and jump into the best fit faster.',
+              '先看即時名單、比對關鍵資訊，再更快找到合適的場。',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Colors.white.withValues(alpha: 0.84),
                     height: 1.45,
@@ -374,22 +372,22 @@ class _DiscoveryHero extends StatelessWidget {
               runSpacing: 10,
               children: <Widget>[
                 _HeroChip(
-                  label: '$totalCount games',
+                  label: '球局 $totalCount 場',
                   icon: Icons.event_available_rounded,
                 ),
                 _HeroChip(
-                  label: '$openSpots open spots',
+                  label: '剩餘 $openSpots 個名額',
                   icon: Icons.airline_seat_recline_normal_rounded,
                 ),
                 _HeroChip(
-                  label: '$manualGames manual',
+                  label: '人工審核 $manualGames 場',
                   icon: Icons.rule_rounded,
                 ),
               ],
             ),
             const SizedBox(height: 14),
             Text(
-              'Next in feed: $nextGameLabel',
+              '下一場：$nextGameLabel',
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
                     color: Colors.white.withValues(alpha: 0.84),
                     fontWeight: FontWeight.w700,
@@ -450,8 +448,8 @@ class _FilterPanel extends StatelessWidget {
                 key: const Key('games-filter-city'),
                 controller: cityController,
                 decoration: _filterDecoration(
-                  label: 'City',
-                  hint: 'Taipei City',
+                  label: '城市',
+                  hint: '台北市',
                   icon: Icons.location_city_rounded,
                 ),
                 textInputAction: TextInputAction.next,
@@ -464,8 +462,8 @@ class _FilterPanel extends StatelessWidget {
                 key: const Key('games-filter-district'),
                 controller: districtController,
                 decoration: _filterDecoration(
-                  label: 'District',
-                  hint: "Da'an",
+                  label: '行政區',
+                  hint: '大安區',
                   icon: Icons.map_rounded,
                 ),
                 textInputAction: TextInputAction.next,
@@ -480,8 +478,8 @@ class _FilterPanel extends StatelessWidget {
                 icon: const Icon(Icons.calendar_month_rounded),
                 label: Text(
                   query.date == null
-                      ? 'Pick date'
-                      : 'Date: ${_formatDate(query.date!)}',
+                      ? '選擇日期'
+                      : '日期：${_formatDate(query.date!)}',
                 ),
               ),
             ),
@@ -493,16 +491,32 @@ class _FilterPanel extends StatelessWidget {
                 initialValue:
                     query.skillLevel.trim().isEmpty ? '' : query.skillLevel,
                 decoration: _filterDecoration(
-                  label: 'Skill',
+                  label: '程度',
                   icon: Icons.emoji_events_rounded,
+                  helperText: '選擇最符合這場球局的節奏。',
                 ),
                 items: const <DropdownMenuItem<String>>[
-                  DropdownMenuItem<String>(value: '', child: Text('Any level')),
-                  DropdownMenuItem<String>(value: 'L1', child: Text('L1')),
-                  DropdownMenuItem<String>(value: 'L2', child: Text('L2')),
-                  DropdownMenuItem<String>(value: 'L3', child: Text('L3')),
-                  DropdownMenuItem<String>(value: 'L4', child: Text('L4')),
-                  DropdownMenuItem<String>(value: 'L5', child: Text('L5')),
+                  DropdownMenuItem<String>(value: '', child: Text('不限程度')),
+                  DropdownMenuItem<String>(
+                    value: 'L1',
+                    child: Text('L1 初學入門'),
+                  ),
+                  DropdownMenuItem<String>(
+                    value: 'L2',
+                    child: Text('L2 穩定練習中'),
+                  ),
+                  DropdownMenuItem<String>(
+                    value: 'L3',
+                    child: Text('L3 穩定球友'),
+                  ),
+                  DropdownMenuItem<String>(
+                    value: 'L4',
+                    child: Text('L4 高階球友'),
+                  ),
+                  DropdownMenuItem<String>(
+                    value: 'L5',
+                    child: Text('L5 競賽程度'),
+                  ),
                 ],
                 onChanged: (String? value) => onSkillLevelChanged(value ?? ''),
               ),
@@ -514,7 +528,7 @@ class _FilterPanel extends StatelessWidget {
                 controller: feeMinController,
                 keyboardType: TextInputType.number,
                 decoration: _filterDecoration(
-                  label: 'Fee min',
+                  label: '費用下限',
                   hint: '0',
                   icon: Icons.payments_rounded,
                 ),
@@ -528,7 +542,7 @@ class _FilterPanel extends StatelessWidget {
                 controller: feeMaxController,
                 keyboardType: TextInputType.number,
                 decoration: _filterDecoration(
-                  label: 'Fee max',
+                  label: '費用上限',
                   hint: '999',
                   icon: Icons.payments_rounded,
                 ),
@@ -539,7 +553,7 @@ class _FilterPanel extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Text(
-          'Choose a date first, then refine the time window.',
+          '先選日期，再細調時段。',
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
                 color: const Color(0xFF66776D),
               ),
@@ -567,7 +581,7 @@ class _FilterPanel extends StatelessWidget {
           children: <Widget>[
             FilterChip(
               key: const Key('games-filter-vacancy'),
-              label: const Text('Vacancy only'),
+              label: const Text('只看有空位'),
               selected: query.vacancyOnly,
               onSelected: onVacancyOnlyChanged,
             ),
@@ -576,7 +590,7 @@ class _FilterPanel extends StatelessWidget {
               key: const Key('games-filter-clear'),
               onPressed: onClearPressed,
               icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Clear filters'),
+              label: const Text('清除篩選'),
             ),
           ],
         ),
@@ -620,7 +634,7 @@ class _GamePreviewCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Host ${game.host.nickname} · ${_formatDuration(game.startAt, game.endAt)} · ${_formatDate(game.startAt)}',
+            '主揪 ${game.host.nickname} · ${_formatDuration(game.startAt, game.endAt)} · ${_formatDate(game.startAt)}',
             style: textTheme.bodySmall?.copyWith(
               color: const Color(0xFF6A7A70),
               fontWeight: FontWeight.w700,
@@ -642,11 +656,14 @@ class _GamePreviewCard extends StatelessWidget {
               ),
               _MetaPill(
                 icon: Icons.emoji_events_rounded,
-                label: _skillRangeLabel(game.skillLevelMin, game.skillLevelMax),
+                label: _skillLevelRangeLabel(
+                  game.skillLevelMin,
+                  game.skillLevelMax,
+                ),
               ),
               _MetaPill(
                 icon: Icons.view_module_rounded,
-                label: '${game.courtCount} courts',
+                label: '${game.courtCount} 面場地',
               ),
               _MetaPill(
                 icon: Icons.sports_tennis_rounded,
@@ -654,13 +671,11 @@ class _GamePreviewCard extends StatelessWidget {
               ),
               _MetaPill(
                 icon: Icons.people_alt_rounded,
-                label: '${game.availableSpots} spots left',
+                label: '${game.availableSpots} 個名額',
               ),
               _MetaPill(
                 icon: Icons.flag_rounded,
-                label: game.approvalMode == 'MANUAL'
-                    ? 'Manual approval'
-                    : 'Auto approval',
+                label: game.approvalMode == 'MANUAL' ? '人工審核' : '自動審核',
               ),
             ],
           ),
@@ -833,10 +848,12 @@ InputDecoration _filterDecoration({
   required String label,
   IconData? icon,
   String? hint,
+  String? helperText,
 }) {
   return InputDecoration(
     labelText: label,
     hintText: hint,
+    helperText: helperText,
     prefixIcon: icon == null ? null : Icon(icon),
     filled: true,
     fillColor: Colors.white,
@@ -882,27 +899,19 @@ String _formatDuration(DateTime startAt, DateTime endAt) {
   return '${duration.inMinutes}m';
 }
 
-String _skillRangeLabel(String minLevel, String? maxLevel) {
-  if (maxLevel == null || maxLevel == minLevel) {
-    return minLevel;
-  }
-
-  return '$minLevel-$maxLevel';
-}
-
 String _shuttleLabel(String? shuttleType) {
   switch (shuttleType) {
     case 'FEATHER':
-      return 'Feather';
+      return '羽毛球';
     case 'NYLON':
-      return 'Nylon';
+      return '尼龍球';
     case 'MIXED':
-      return 'Mixed shuttle';
+      return '混合球種';
     case null:
-      return 'Shuttle TBD';
+      return '球種待定';
   }
 
-  return 'Shuttle TBD';
+  return '球種待定';
 }
 
 String _formatFeeRange(int? minFee, int? maxFee) {
@@ -915,23 +924,53 @@ String _formatFeeRange(int? minFee, int? maxFee) {
   }
 
   if (maxFee != null) {
-    return 'Up to NT\$$maxFee';
+    return '最高 NT\$$maxFee';
   }
 
-  return 'Any fee';
+  return '不限費用';
 }
 
 String _timePresetLabel(GamesFeedTimePreset preset) {
   switch (preset) {
     case GamesFeedTimePreset.any:
-      return 'Any time';
+      return '不限時段';
     case GamesFeedTimePreset.morning:
-      return 'Morning';
+      return '早上';
     case GamesFeedTimePreset.afternoon:
-      return 'Afternoon';
+      return '下午';
     case GamesFeedTimePreset.evening:
-      return 'Evening';
+      return '晚上';
     case GamesFeedTimePreset.late:
-      return 'Late night';
+      return '深夜';
   }
+}
+
+String _skillLevelDisplayLabel(String skillLevel) {
+  final String normalized = skillLevel.trim().toUpperCase();
+  if (normalized.isEmpty) {
+    return '不限程度';
+  }
+
+  switch (normalized) {
+    case 'L1':
+      return 'L1 初學入門';
+    case 'L2':
+      return 'L2 穩定練習中';
+    case 'L3':
+      return 'L3 穩定球友';
+    case 'L4':
+      return 'L4 高階球友';
+    case 'L5':
+      return 'L5 競賽程度';
+    default:
+      return skillLevel;
+  }
+}
+
+String _skillLevelRangeLabel(String minLevel, String? maxLevel) {
+  if (maxLevel == null || maxLevel.trim().isEmpty) {
+    return _skillLevelDisplayLabel(minLevel);
+  }
+
+  return '${_skillLevelDisplayLabel(minLevel)} - ${_skillLevelDisplayLabel(maxLevel)}';
 }

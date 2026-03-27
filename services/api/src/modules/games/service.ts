@@ -113,9 +113,14 @@ export class GamesService {
     }
 
     const isHost = currentUserId === game.hostId;
-    const isApproved = detail.joinSummary.currentUserStatus === 'APPROVED';
+    const canViewHostContact = canViewHostContactInfo(
+      game.status,
+      isHost,
+      detail.joinSummary.currentUserStatus
+    );
+    detail.canViewHostContact = canViewHostContact;
 
-    if (!isHost && !isApproved) {
+    if (!canViewHostContact) {
       delete detail.host.phoneNumber;
       delete detail.host.lineId;
     }
@@ -381,6 +386,22 @@ function ensureEditableGame(status: GameStatus): void {
   }
 }
 
+function canViewHostContactInfo(
+  gameStatus: GameStatus,
+  isHost: boolean,
+  currentUserStatus: GameDetailDto['joinSummary']['currentUserStatus']
+): boolean {
+  if (isHost) {
+    return true;
+  }
+
+  if (gameStatus === GameStatus.CANCELLED || gameStatus === GameStatus.COMPLETED) {
+    return false;
+  }
+
+  return currentUserStatus === 'APPROVED';
+}
+
 async function getAvailableSpots(gameId: string): Promise<number> {
   const game = await prisma.game.findUnique({
     where: {
@@ -406,6 +427,7 @@ async function hasNoRemainingSpots(gameId: string): Promise<boolean> {
 function buildGamesWhere(query: GamesQuery): Record<string, unknown> {
   const conditions: Array<Record<string, unknown>> = [];
   const normalizedStatus = query.vacancyOnly ? 'OPEN' : query.status;
+  const hasExplicitTimeFilter = Boolean(query.date || query.startAtFrom || query.startAtTo);
 
   if (query.city) {
     conditions.push({
@@ -447,8 +469,22 @@ function buildGamesWhere(query: GamesQuery): Record<string, unknown> {
     });
   }
 
+  if (!hasExplicitTimeFilter) {
+    conditions.push({
+      startAt: {
+        gte: new Date(),
+      },
+    });
+  }
+
   if (normalizedStatus) {
     conditions.push({ status: normalizedStatus });
+  } else {
+    conditions.push({
+      status: {
+        in: [GameStatus.OPEN, GameStatus.FULL],
+      },
+    });
   }
 
   if (query.feeMin !== undefined || query.feeMax !== undefined) {

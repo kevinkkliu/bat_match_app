@@ -118,6 +118,7 @@ export function mapGameDetail(game: GameDetailRow): GameDetailDto {
   return {
     ...mapGameSummary(game),
     notes: game.notes,
+    canViewHostContact: false,
     joinSummary: {
       currentUserStatus: null,
       currentUserRequestId: null,
