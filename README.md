@@ -4,24 +4,24 @@ This repo now keeps only the Flutter client and TypeScript API.
 
 ## Structure
 
-- `<path_to_your_project>/apps/mobile_flutter`
-- `<path_to_your_project>/services/api`
-- `<path_to_your_project>/prisma`
-- `<path_to_your_project>/docs`
+- `<path_to_your_project>/bat_dating_app/apps/mobile_flutter`
+- `<path_to_your_project>/bat_dating_app/services/api`
+- `<path_to_your_project>/bat_dating_app/prisma`
+- `<path_to_your_project>/bat_dating_app/docs`
 
 ## Demo Preview
 
 This is the recommended QA and demo path. The root demo script reseeds the database, starts the same-origin preview, and keeps the browser review path on `http://localhost:8080`.
 
 ```bash
-cd <path_to_your_project>
+cd <path_to_your_project>/bat_dating_app
 ./scripts/demo-preview.sh host
 ```
 
 Use guest mode for browse-only review:
 
 ```bash
-cd <path_to_your_project>
+cd <path_to_your_project>/bat_dating_app
 ./scripts/demo-preview.sh guest
 ```
 
@@ -35,7 +35,7 @@ What to remember:
 
 QA checklist:
 
-- [docs/mvp-acceptance-checklist.md](<path_to_your_project>/docs/mvp-acceptance-checklist.md)
+- [docs/mvp-acceptance-checklist.md]
 
 Helpful scripts:
 
@@ -63,7 +63,7 @@ If you only want the preview stack without reseeding, use `./scripts/preview-up.
 Use this only when you want to run the Flutter web app directly against the local API process.
 
 ```bash
-cd <path_to_your_project>/apps/mobile_flutter
+cd <path_to_your_project>/bat_dating_app/apps/mobile_flutter
 flutter analyze
 flutter test
 flutter run -d web-server --web-hostname 0.0.0.0 --web-port 7357 --dart-define=API_BASE_URL=http://localhost:3000
@@ -72,7 +72,7 @@ flutter run -d web-server --web-hostname 0.0.0.0 --web-port 7357 --dart-define=A
 ## API
 
 ```bash
-cd <path_to_your_project>/services/api
+cd <path_to_your_project>/bat_dating_app/services/api
 source ~/.nvm/nvm.sh
 nvm use 20
 npm install
@@ -87,5 +87,5 @@ The seeded browser-review path is the same demo preview flow above.
 ## Notes
 
 - Local Postgres runs in Docker as `bat-dating-postgres`
-- Seed data is created by `<path_to_your_project>/services/api/src/scripts/seed.ts`
+- Seed data is created by `<path_to_your_project>/bat_dating_app/services/api/src/scripts/seed.ts`
 - The old Expo/React Native prototype has been removed from the repo
