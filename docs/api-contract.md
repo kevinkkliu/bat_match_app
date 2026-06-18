@@ -2,9 +2,9 @@
 
 This document is the stable contract target for the new stack:
 
-- Flutter client: `<path_to_your_project>/apps/mobile_flutter`
-- API service: `<path_to_your_project>/services/api`
-- Data schema source: `<path_to_your_project>/prisma/schema.prisma`
+- Flutter client: `<path_to_your_project>/bat_dating_app/apps/mobile_flutter`
+- API service: `<path_to_your_project>/bat_dating_app/services/api`
+- Data schema source: `<path_to_your_project>/bat_dating_app/prisma/schema.prisma`
 
 ## Contract Rules
 
