@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document converts [PRD.md](<path_to_your_project>/PRD.md) into an execution-oriented task breakdown for the current codebase.
+This document converts [PRD.md](../PRD.md) into an execution-oriented task breakdown for the current codebase.
 
 It is intended to answer:
 
@@ -11,7 +11,7 @@ It is intended to answer:
 - how work should be split across product, Flutter, API, and QA
 - what order the team should execute in
 
-The executable QA checklist lives in [mvp-acceptance-checklist.md](<path_to_your_project>/docs/mvp-acceptance-checklist.md).
+The executable QA checklist lives in [mvp-acceptance-checklist.md](mvp-acceptance-checklist.md).
 
 ## Scope Baseline
 
@@ -255,7 +255,7 @@ Turn PRD outcomes into a repeatable acceptance checklist instead of ad hoc manua
   - seeded accounts
   - seeded games
   - test database reset flow
-- Keep acceptance language aligned with [mvp-acceptance-checklist.md](<path_to_your_project>/docs/mvp-acceptance-checklist.md)
+- Keep acceptance language aligned with [mvp-acceptance-checklist.md](mvp-acceptance-checklist.md)
 
 ### Deliverables
 

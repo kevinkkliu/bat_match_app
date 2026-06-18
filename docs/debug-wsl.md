@@ -49,7 +49,7 @@ wsl -l -v
 3. 打開專案目錄：
 
 ```text
-<path_to_your_project>/Project/bat_match_app
+<path_to_your_project>
 ```
 
 不要直接在 Windows 視窗打開 `<path_to_your_project>` 版本來跑這份 debug 設定。
@@ -117,7 +117,7 @@ pwd
 應該是：
 
 ```text
-<path_to_your_project>/Project/bat_match_app
+<path_to_your_project>
 ```
 
 ### Step 2. 準備 API 環境檔
@@ -172,7 +172,7 @@ npm run prisma:generate
 這個專案目前把 local DB 啟動交給 Docker Desktop：
 
 ```bash
-cd <path_to_your_project>/Project/bat_match_app
+cd <path_to_your_project>
 cp .env.example .env
 docker.exe compose -f docker-compose.yml up -d postgres
 ```
@@ -192,7 +192,7 @@ docker.exe compose -f docker-compose.yml ps postgres
 如果你之前有跑過 preview stack 或 docker API，先把它停掉：
 
 ```bash
-cd <path_to_your_project>/Project/bat_match_app
+cd <path_to_your_project>
 docker.exe compose -f docker-compose.yml stop api
 ```
 

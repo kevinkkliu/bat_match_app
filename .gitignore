@@ -1,18 +1,79 @@
+# Environment and local secrets
+.env
+.env.*
+!.env.example
+!**/.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*service-account*.json
+*credentials*.json
+
+# Node dependencies and build output
 node_modules/
 dist/
+build/
 coverage/
+.nyc_output/
+.turbo/
+.cache/
+.parcel-cache/
+.eslintcache
+tsconfig.tsbuildinfo
+
+# Logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+flutter_*.log
+
+# Local databases and generated data
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+prisma/dev.db
+prisma/dev.db-journal
+tmp/
+temp/
+.tmp/
+uploads/
+
+# Docker and compose local overrides
+docker-compose.override.yml
+.docker/
+
+# Editor and OS files
 .DS_Store
-services/api/node_modules/
-services/api/dist/
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Flutter and Dart generated files
 apps/mobile_flutter/.dart_tool/
 apps/mobile_flutter/.flutter-plugins
 apps/mobile_flutter/.flutter-plugins-dependencies
 apps/mobile_flutter/.packages
+apps/mobile_flutter/.pub-cache/
+apps/mobile_flutter/.pub/
 apps/mobile_flutter/build/
-apps/mobile_flutter/.idea/
+apps/mobile_flutter/coverage/
 apps/mobile_flutter/.metadata
-flutter_*.log
-.env
+apps/mobile_flutter/android/app/debug/
+apps/mobile_flutter/android/app/profile/
+apps/mobile_flutter/android/app/release/
+apps/mobile_flutter/app.*.symbols
+apps/mobile_flutter/app.*.map.json
+
+# API service local output
+services/api/node_modules/
+services/api/dist/
+services/api/coverage/
