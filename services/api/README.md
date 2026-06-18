@@ -30,7 +30,7 @@ The root preview stack serves Flutter web through nginx and keeps the browser on
 The preview scripts create `.env` from `.env.example` if needed.
 
 ```bash
-cd <path_to_your_project>
+cd <path_to_your_project>/bat_dating_app
 ./scripts/preview-up.sh
 ```
 
@@ -62,6 +62,6 @@ After seeding, Flutter discovery/detail screens should show real data.
 
 This service intentionally reuses the repo-level schema:
 
-- `<path_to_your_project>/prisma/schema.prisma`
+- `<path_to_your_project>/bat_dating_app/prisma/schema.prisma`
 
 So there is only one Prisma schema during the transition period.
