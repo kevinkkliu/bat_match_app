@@ -49,7 +49,7 @@ wsl -l -v
 3. 打開專案目錄：
 
 ```text
-<path_to_your_project>
+<path_to_your_project>/Project/bat_match_app
 ```
 
 不要直接在 Windows 視窗打開 `<path_to_your_project>` 版本來跑這份 debug 設定。
@@ -94,11 +94,6 @@ flutter --version
 
 ## 3. 專案內已準備好的 debug 設定
 
-目前 repo 已經有以下設定檔：
-
-- [.vscode/launch.json](<path_to_your_project>/.vscode/launch.json)
-- [.vscode/tasks.json](<path_to_your_project>/.vscode/tasks.json)
-- [docker-compose.debug.yml](<path_to_your_project>/docker-compose.debug.yml)
 
 可用的 launch configurations：
 
@@ -122,7 +117,7 @@ pwd
 應該是：
 
 ```text
-<path_to_your_project>
+<path_to_your_project>/Project/bat_match_app
 ```
 
 ### Step 2. 準備 API 環境檔
@@ -177,7 +172,7 @@ npm run prisma:generate
 這個專案目前把 local DB 啟動交給 Docker Desktop：
 
 ```bash
-cd <path_to_your_project>
+cd <path_to_your_project>/Project/bat_match_app
 cp .env.example .env
 docker.exe compose -f docker-compose.yml up -d postgres
 ```
@@ -197,7 +192,7 @@ docker.exe compose -f docker-compose.yml ps postgres
 如果你之前有跑過 preview stack 或 docker API，先把它停掉：
 
 ```bash
-cd <path_to_your_project>
+cd <path_to_your_project>/Project/bat_match_app
 docker.exe compose -f docker-compose.yml stop api
 ```
 
