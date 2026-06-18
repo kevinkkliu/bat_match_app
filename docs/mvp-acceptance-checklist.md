@@ -13,14 +13,14 @@ This checklist turns the PRD into an executable review path for product, QA, and
 Use the repo root demo script for a reproducible review flow. It reseeds the database, starts the same-origin preview, and keeps host/guest review repeatable without manual setup.
 
 ```bash
-cd <path_to_your_project>
+cd <path_to_your_project>/bat_dating_app
 ./scripts/demo-preview.sh host
 ```
 
 Use guest mode for browse-only review:
 
 ```bash
-cd <path_to_your_project>
+cd <path_to_your_project>/bat_dating_app
 ./scripts/demo-preview.sh guest
 ```
 
